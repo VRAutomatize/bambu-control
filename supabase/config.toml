@@ -1,0 +1,15 @@
+# Supabase local dev config (mínimo). Ajuste project_id ao linkar um projeto real.
+project_id = "bambu-control"
+
+[db]
+port = 54322
+major_version = 15
+
+[api]
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+
+[auth]
+enable_signup = true
+site_url = "http://localhost:3000"
