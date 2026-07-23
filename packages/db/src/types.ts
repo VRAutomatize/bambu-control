@@ -27,7 +27,7 @@ export type NormalizedStatus =
   | 'cancelled'
   | 'unknown';
 
-export interface OrganizationRow {
+export type OrganizationRow = {
   id: Uuid;
   name: string;
   slug: string;
@@ -37,7 +37,7 @@ export interface OrganizationRow {
   updated_at: Ts;
 }
 
-export interface OrganizationMemberRow {
+export type OrganizationMemberRow = {
   id: Uuid;
   organization_id: Uuid;
   user_id: Uuid;
@@ -45,7 +45,7 @@ export interface OrganizationMemberRow {
   created_at: Ts;
 }
 
-export interface ProfileRow {
+export type ProfileRow = {
   id: Uuid;
   full_name: string | null;
   avatar_url: string | null;
@@ -53,7 +53,7 @@ export interface ProfileRow {
   updated_at: Ts;
 }
 
-export interface MachineCostProfileRow {
+export type MachineCostProfileRow = {
   id: Uuid;
   organization_id: Uuid;
   name: string;
@@ -70,7 +70,7 @@ export interface MachineCostProfileRow {
   updated_at: Ts;
 }
 
-export interface ProviderConnectionRow {
+export type ProviderConnectionRow = {
   id: Uuid;
   organization_id: Uuid;
   provider: 'bambu_cloud' | 'bambu_lan' | 'manual' | 'simplyprint' | 'generic';
@@ -87,7 +87,7 @@ export interface ProviderConnectionRow {
   updated_at: Ts;
 }
 
-export interface PrinterRow {
+export type PrinterRow = {
   id: Uuid;
   organization_id: Uuid;
   provider_connection_id: Uuid | null;
@@ -104,7 +104,7 @@ export interface PrinterRow {
   updated_at: Ts;
 }
 
-export interface FilamentRow {
+export type FilamentRow = {
   id: Uuid;
   organization_id: Uuid;
   brand: string | null;
@@ -120,7 +120,7 @@ export interface FilamentRow {
   updated_at: Ts;
 }
 
-export interface SpoolRow {
+export type SpoolRow = {
   id: Uuid;
   organization_id: Uuid;
   filament_id: Uuid;
@@ -136,7 +136,7 @@ export interface SpoolRow {
   updated_at: Ts;
 }
 
-export interface PrintJobRow {
+export type PrintJobRow = {
   id: Uuid;
   organization_id: Uuid;
   provider_connection_id: Uuid | null;
@@ -167,7 +167,7 @@ export interface PrintJobRow {
   updated_at: Ts;
 }
 
-export interface PrintJobMaterialRow {
+export type PrintJobMaterialRow = {
   id: Uuid;
   organization_id: Uuid;
   print_job_id: Uuid;
@@ -182,7 +182,7 @@ export interface PrintJobMaterialRow {
   updated_at: Ts;
 }
 
-export interface PrintCostSnapshotRow {
+export type PrintCostSnapshotRow = {
   id: Uuid;
   organization_id: Uuid;
   print_job_id: Uuid;
@@ -202,7 +202,7 @@ export interface PrintCostSnapshotRow {
   calculation_input_json: Json;
 }
 
-export interface CustomerRow {
+export type CustomerRow = {
   id: Uuid;
   organization_id: Uuid;
   name: string;
@@ -216,7 +216,7 @@ export interface CustomerRow {
   updated_at: Ts;
 }
 
-export interface OrderRow {
+export type OrderRow = {
   id: Uuid;
   organization_id: Uuid;
   customer_id: Uuid | null;
@@ -235,7 +235,7 @@ export interface OrderRow {
   updated_at: Ts;
 }
 
-export interface OrderItemRow {
+export type OrderItemRow = {
   id: Uuid;
   organization_id: Uuid;
   order_id: Uuid;
@@ -250,7 +250,7 @@ export interface OrderItemRow {
   updated_at: Ts;
 }
 
-export interface OrderItemPrintJobRow {
+export type OrderItemPrintJobRow = {
   id: Uuid;
   organization_id: Uuid;
   order_item_id: Uuid;
@@ -260,7 +260,7 @@ export interface OrderItemPrintJobRow {
   created_at: Ts;
 }
 
-export interface PaymentRow {
+export type PaymentRow = {
   id: Uuid;
   organization_id: Uuid;
   order_id: Uuid;
@@ -272,7 +272,7 @@ export interface PaymentRow {
   created_at: Ts;
 }
 
-export interface SyncRunRow {
+export type SyncRunRow = {
   id: Uuid;
   organization_id: Uuid;
   provider_connection_id: Uuid | null;
@@ -290,7 +290,7 @@ export interface SyncRunRow {
   metadata_json: Json;
 }
 
-export interface AuditLogRow {
+export type AuditLogRow = {
   id: Uuid;
   organization_id: Uuid;
   actor_user_id: Uuid | null;
