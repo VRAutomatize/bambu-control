@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      # Placeholders para o build do Next (nenhum segredo real).
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+      BAMBU_LIVE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+  db-migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bambu
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Aplicar migrations + RLS tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d bambu -v ON_ERROR_STOP=1 -f supabase/tests/_auth_shim.sql
+          for f in supabase/migrations/*.sql; do
+            echo "== $f =="
+            psql -h localhost -U postgres -d bambu -v ON_ERROR_STOP=1 -f "$f"
+          done
+          psql -h localhost -U postgres -d bambu -v ON_ERROR_STOP=1 -f supabase/tests/rls_test.sql
+          psql -h localhost -U postgres -d bambu -v ON_ERROR_STOP=1 -f supabase/seed.sql
