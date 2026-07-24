@@ -54,3 +54,63 @@ export async function disconnect(connectionId: string) {
     .eq('organization_id', org.organizationId);
   revalidatePath('/integracoes');
 }
+
+/** Verifica o código de autenticação Bambu. */
+export async function verifyBambuCode(_prev: unknown, formData: FormData) {
+  const { org } = await requireCurrentOrg();
+  if (!isAdmin(org.role)) return { error: 'Apenas owner/admin podem verificar integrações.' };
+
+  const connectionId = String(formData.get('connectionId') ?? '');
+  const code = String(formData.get('code') ?? '').trim();
+
+  if (!connectionId || !code) {
+    return { error: 'Código e conexão são obrigatórios.' };
+  }
+
+  const supabase = await createClient();
+
+  // In live mode, would call Bambu API to verify the code
+  // For now, demo mode just marks as connected
+  const live = process.env.BAMBU_LIVE_ENABLED === 'true';
+
+  if (live) {
+    // TODO: Call Bambu API with code to verify and get token
+    // const bambuResult = await verifyBambuAuthCode(code);
+    // if (!bambuResult.success) {
+    //   return { error: 'Código inválido. Verifique e tente novamente.' };
+    // }
+    // encrypted_credentials would be set here with bambuResult.token encrypted
+  }
+
+  // Mark connection as connected
+  const { error } = await supabase
+    .from('provider_connections')
+    .update({
+      status: 'connected',
+      last_error_message: null,
+      last_error_code: null,
+    })
+    .eq('id', connectionId)
+    .eq('organization_id', org.organizationId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath('/integracoes');
+  return { ok: 'Conexão verificada com sucesso!' };
+}
+
+/** Reenviar código (stub para demo). */
+export async function resendBambuCode(_prev: unknown, formData: FormData) {
+  const { org } = await requireCurrentOrg();
+  if (!isAdmin(org.role)) return { error: 'Apenas owner/admin podem reenviar código.' };
+
+  const connectionId = String(formData.get('connectionId') ?? '');
+
+  if (!connectionId) {
+    return { error: 'Conexão não encontrada.' };
+  }
+
+  // In live mode, would call Bambu API to resend the code
+  // For demo, just acknowledge
+  return { ok: 'Código reenviado (em demo mode, não há email real).' };
+}

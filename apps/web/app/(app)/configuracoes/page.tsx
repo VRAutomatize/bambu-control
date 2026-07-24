@@ -1,7 +1,8 @@
-import { requireCurrentOrg, listMemberships } from '@/lib/auth';
+import { requireCurrentOrg, listMemberships, isAdmin } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader, Card } from '@/components/ui';
 import { formatDateTime } from '@/lib/format';
+import { InviteMemberForm } from './invite-member-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +23,14 @@ export default async function ConfiguracoesPage() {
     .eq('organization_id', org.organizationId)
     .order('created_at');
 
+  const { data: invites } = await supabase
+    .from('organization_invites')
+    .select('id, email, role, expires_at, accepted_at')
+    .eq('organization_id', org.organizationId)
+    .order('created_at', { ascending: false });
+
   const memberships = await listMemberships();
+  const canInvite = isAdmin(org.role);
 
   return (
     <div>
@@ -52,30 +60,59 @@ export default async function ConfiguracoesPage() {
 
         <Card className="lg:col-span-2">
           <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Membros</h2>
-          <table className="w-full">
-            <thead className="table-head">
-              <tr>
-                <th className="py-2">Usuário</th>
-                <th className="py-2">Papel</th>
-                <th className="py-2">Desde</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(members ?? []).map((m) => (
-                <tr key={m.user_id} className="hairline">
-                  <td className="py-2 font-mono text-[12px] text-neutral-500">{m.user_id.slice(0, 8)}…</td>
-                  <td className="py-2 text-[13.5px]">{ROLE_LABELS[m.role] ?? m.role}</td>
-                  <td className="py-2 text-[13.5px] text-neutral-500">
-                    {formatDateTime(m.created_at, org.timezone)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="mt-4 text-[12px] text-neutral-400 dark:text-neutral-500">
-            Convite de membros e permissões avançadas: próxima iteração.
-          </p>
+          {(members ?? []).length > 0 && (
+            <>
+              <table className="w-full">
+                <thead className="table-head">
+                  <tr>
+                    <th className="py-2 text-left">Usuário</th>
+                    <th className="py-2 text-left">Papel</th>
+                    <th className="py-2 text-left">Desde</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(members ?? []).map((m) => (
+                    <tr key={m.user_id} className="hairline">
+                      <td className="py-2 font-mono text-[12px] text-neutral-500">{m.user_id.slice(0, 8)}…</td>
+                      <td className="py-2 text-[13.5px]">{ROLE_LABELS[m.role] ?? m.role}</td>
+                      <td className="py-2 text-[13.5px] text-neutral-500">
+                        {formatDateTime(m.created_at, org.timezone)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {(invites?.length ?? 0) > 0 && <div className="mt-4 border-t border-neutral-200 dark:border-white/[0.08]" />}
+            </>
+          )}
+          {(invites?.length ?? 0) > 0 && (
+            <div className="mt-4">
+              <h3 className="mb-3 text-[13px] font-medium text-neutral-600 dark:text-neutral-400">Convites pendentes</h3>
+              <div className="space-y-2">
+                {invites?.map((invite) => (
+                  <div key={invite.id} className="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2.5 dark:bg-amber-500/10">
+                    <div>
+                      <p className="text-[13px] font-medium text-neutral-900 dark:text-neutral-100">{invite.email}</p>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                        {ROLE_LABELS[invite.role] ?? invite.role} · Expira {formatDateTime(invite.expires_at, org.timezone)}
+                      </p>
+                    </div>
+                    {invite.accepted_at && (
+                      <span className="text-[11px] font-medium text-green-600 dark:text-green-400">Aceito</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </Card>
+
+        {canInvite && (
+          <Card className="lg:col-span-2">
+            <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Convidar membro</h2>
+            <InviteMemberForm />
+          </Card>
+        )}
       </div>
     </div>
   );

@@ -45,6 +45,17 @@ export type OrganizationMemberRow = {
   created_at: Ts;
 }
 
+export type OrganizationInviteRow = {
+  id: Uuid;
+  organization_id: Uuid;
+  email: string;
+  role: OrgRole;
+  token: string;
+  expires_at: Ts;
+  accepted_at: Ts | null;
+  created_at: Ts;
+}
+
 export type ProfileRow = {
   id: Uuid;
   full_name: string | null;
@@ -307,6 +318,7 @@ export interface Database {
     Tables: {
       organizations: Table<OrganizationRow>;
       organization_members: Table<OrganizationMemberRow>;
+      organization_invites: Table<OrganizationInviteRow>;
       profiles: Table<ProfileRow>;
       machine_cost_profiles: Table<MachineCostProfileRow>;
       provider_connections: Table<ProviderConnectionRow>;
@@ -331,6 +343,10 @@ export interface Database {
       create_organization: {
         Args: { p_name: string; p_slug: string; p_currency?: string; p_timezone?: string };
         Returns: OrganizationRow;
+      };
+      accept_organization_invite: {
+        Args: { p_token: string };
+        Returns: Array<{ success: boolean; message: string; organization_id: Uuid | null }>;
       };
     };
     Enums: { org_role: OrgRole };

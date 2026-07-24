@@ -5,7 +5,7 @@ import { AuthForm } from '@/components/auth-form';
 import { IconAlertTriangle, IconPlug } from '@/components/icons';
 import { formatDateTime } from '@/lib/format';
 import { connectBambu } from './actions';
-import { SyncButton, DisconnectButton } from './sync-buttons';
+import { SyncButton, DisconnectButton, VerifyCodeButton } from './sync-buttons';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,7 +79,20 @@ export default async function IntegracoesPage() {
                     {c.last_error_message}
                   </p>
                 )}
-                {c.status !== 'disconnected' && (
+                {c.status === 'pending_verification' && (
+                  <div className="mt-4 space-y-3 rounded-lg bg-amber-50 p-3 dark:bg-amber-500/10">
+                    <div>
+                      <p className="text-[12px] font-medium text-amber-900 dark:text-amber-100">
+                        Verifique sua conexão
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-amber-700 dark:text-amber-200">
+                        Um código foi enviado por email. Digite-o abaixo para completar a autenticação.
+                      </p>
+                    </div>
+                    <VerifyCodeButton connectionId={c.id} />
+                  </div>
+                )}
+                {c.status !== 'disconnected' && c.status !== 'pending_verification' && (
                   <div className="mt-4 flex gap-2">
                     <SyncButton connectionId={c.id} />
                     <DisconnectButton connectionId={c.id} />
@@ -90,22 +103,104 @@ export default async function IntegracoesPage() {
           )}
         </div>
 
-        <Card>
-          <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Conectar Bambu Cloud</h2>
-          <AuthForm action={connectBambu} submitLabel={live ? 'Conectar' : 'Criar conexão demo'}>
-            <input name="displayName" className="input" placeholder="Nome da conexão" defaultValue="Bambu Cloud" />
-            {live && (
-              <>
-                <input name="account" className="input" placeholder="E-mail da conta Bambu" />
-                <input name="password" type="password" className="input" placeholder="Senha" />
-                <p className="text-[11.5px] text-neutral-400 dark:text-neutral-500">
-                  A senha é usada apenas para autenticar e é descartada; guardamos somente o token
-                  criptografado.
-                </p>
-              </>
-            )}
-          </AuthForm>
-        </Card>
+        <div className="space-y-4">
+          <Card>
+            <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Conectar Bambu Cloud</h2>
+            <div className="space-y-4">
+              {live && (
+                <>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-400">
+                        1
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-[12px] font-semibold text-neutral-900 dark:text-neutral-100">
+                          Abra sua conta Bambu Lab
+                        </h3>
+                        <p className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400">
+                          Visite{' '}
+                          <a
+                            href="https://www.bambulab.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
+                          >
+                            bambulab.com
+                          </a>
+                          {' '}e crie ou acesse sua conta.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-200 dark:border-white/[0.08]" />
+
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-400">
+                        2
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-[12px] font-semibold text-neutral-900 dark:text-neutral-100">
+                          Digite suas credenciais
+                        </h3>
+                        <p className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400">
+                          Use seu e-mail e senha da conta Bambu.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-200 dark:border-white/[0.08]" />
+
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-400">
+                        3
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-[12px] font-semibold text-neutral-900 dark:text-neutral-100">
+                          Verifique o código por email
+                        </h3>
+                        <p className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400">
+                          Um código será enviado para validar a conexão.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-200 dark:border-white/[0.08]" />
+                </>
+              )}
+
+              <AuthForm action={connectBambu} submitLabel={live ? 'Conectar' : 'Criar conexão demo'}>
+                <input
+                  name="displayName"
+                  className="input"
+                  placeholder="Nome da conexão"
+                  defaultValue="Bambu Cloud"
+                />
+                {live && (
+                  <>
+                    <input name="account" className="input" placeholder="E-mail da conta Bambu" />
+                    <input name="password" type="password" className="input" placeholder="Senha" />
+                    <p className="text-[11.5px] text-neutral-400 dark:text-neutral-500">
+                      A senha é usada apenas para autenticar e é descartada; guardamos somente o token
+                      criptografado.
+                    </p>
+                  </>
+                )}
+              </AuthForm>
+
+              {!live && (
+                <div className="rounded-lg bg-amber-50 px-3 py-2.5 text-[11px] text-amber-700 dark:bg-amber-500/15 dark:text-amber-200">
+                  <strong>Modo demo:</strong> Esta conexão simula dados de impressão para testes. Não será usada informação real.
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
       </div>
     </div>
   );
