@@ -61,10 +61,15 @@ export async function verifyBambuCode(_prev: unknown, formData: FormData) {
   if (!isAdmin(org.role)) return { error: 'Apenas owner/admin podem verificar integrações.' };
 
   const connectionId = String(formData.get('connectionId') ?? '');
-  const code = String(formData.get('code') ?? '').trim();
+  const code = String(formData.get('code') ?? '').trim().toUpperCase();
 
   if (!connectionId || !code) {
     return { error: 'Código e conexão são obrigatórios.' };
+  }
+
+  // Validar formato: 6 dígitos ou caracteres alfanuméricos
+  if (!/^[A-Z0-9]{6}$/.test(code)) {
+    return { error: 'Código deve ter exatamente 6 caracteres alfanuméricos.' };
   }
 
   const supabase = await createClient();

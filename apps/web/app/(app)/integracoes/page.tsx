@@ -104,74 +104,81 @@ export default async function IntegracoesPage() {
         </div>
 
         <div className="space-y-4">
+          {!live && (
+            <Card>
+              <div className="rounded-lg bg-amber-50 px-3 py-2.5 dark:bg-amber-500/15">
+                <p className="text-[11px] font-medium text-amber-900 dark:text-amber-100">
+                  ⚠️ Modo simulado
+                </p>
+                <p className="mt-0.5 text-[11px] text-amber-700 dark:text-amber-200">
+                  Você está testando com dados simulados. Os dados reais não serão acessados.
+                </p>
+              </div>
+            </Card>
+          )}
+
           <Card>
-            <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Conectar Bambu Cloud</h2>
+            <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Conectar impressoras Bambu</h2>
             <div className="space-y-4">
               {live && (
-                <>
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-400">
+                <div className="space-y-3 rounded-lg bg-brand-50 px-3 py-3 dark:bg-brand-500/10">
+                  <p className="text-[12px] font-semibold text-brand-900 dark:text-brand-100">
+                    Como conectar (3 passos)
+                  </p>
+
+                  <div className="space-y-2">
+                    <div className="flex gap-3">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs font-semibold text-brand-800 dark:bg-brand-500/30 dark:text-brand-200">
                         1
-                      </div>
+                      </span>
                       <div className="flex-1">
-                        <h3 className="text-[12px] font-semibold text-neutral-900 dark:text-neutral-100">
-                          Abra sua conta Bambu Lab
-                        </h3>
-                        <p className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400">
+                        <p className="text-[11px] font-semibold text-brand-900 dark:text-brand-100">
+                          Ter uma conta Bambu Lab
+                        </p>
+                        <p className="text-[10px] text-brand-700 dark:text-brand-200">
                           Visite{' '}
                           <a
                             href="https://www.bambulab.com"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
+                            className="font-medium hover:underline"
                           >
                             bambulab.com
                           </a>
-                          {' '}e crie ou acesse sua conta.
+                          {' '}para criar a sua.
                         </p>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="border-t border-neutral-200 dark:border-white/[0.08]" />
-
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-400">
+                    <div className="flex gap-3">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs font-semibold text-brand-800 dark:bg-brand-500/30 dark:text-brand-200">
                         2
-                      </div>
+                      </span>
                       <div className="flex-1">
-                        <h3 className="text-[12px] font-semibold text-neutral-900 dark:text-neutral-100">
-                          Digite suas credenciais
-                        </h3>
-                        <p className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400">
-                          Use seu e-mail e senha da conta Bambu.
+                        <p className="text-[11px] font-semibold text-brand-900 dark:text-brand-100">
+                          Digitar suas credenciais
+                        </p>
+                        <p className="text-[10px] text-brand-700 dark:text-brand-200">
+                          Use seu e-mail e senha. Nunca armazenamos a senha.
                         </p>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="border-t border-neutral-200 dark:border-white/[0.08]" />
-
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-400">
+                    <div className="flex gap-3">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs font-semibold text-brand-800 dark:bg-brand-500/30 dark:text-brand-200">
                         3
-                      </div>
+                      </span>
                       <div className="flex-1">
-                        <h3 className="text-[12px] font-semibold text-neutral-900 dark:text-neutral-100">
-                          Verifique o código por email
-                        </h3>
-                        <p className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400">
-                          Um código será enviado para validar a conexão.
+                        <p className="text-[11px] font-semibold text-brand-900 dark:text-brand-100">
+                          Verificar código por email
+                        </p>
+                        <p className="text-[10px] text-brand-700 dark:text-brand-200">
+                          Um código será enviado para confirmar a conexão.
                         </p>
                       </div>
                     </div>
                   </div>
-
-                  <div className="border-t border-neutral-200 dark:border-white/[0.08]" />
-                </>
+                </div>
               )}
 
               <AuthForm action={connectBambu} submitLabel={live ? 'Conectar' : 'Criar conexão demo'}>
@@ -183,21 +190,14 @@ export default async function IntegracoesPage() {
                 />
                 {live && (
                   <>
-                    <input name="account" className="input" placeholder="E-mail da conta Bambu" />
-                    <input name="password" type="password" className="input" placeholder="Senha" />
-                    <p className="text-[11.5px] text-neutral-400 dark:text-neutral-500">
-                      A senha é usada apenas para autenticar e é descartada; guardamos somente o token
-                      criptografado.
+                    <input name="account" className="input" placeholder="E-mail da conta Bambu" required />
+                    <input name="password" type="password" className="input" placeholder="Senha" required />
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      <strong>Segurança:</strong> A senha é descartada após autenticação. Guardamos somente o token criptografado.
                     </p>
                   </>
                 )}
               </AuthForm>
-
-              {!live && (
-                <div className="rounded-lg bg-amber-50 px-3 py-2.5 text-[11px] text-amber-700 dark:bg-amber-500/15 dark:text-amber-200">
-                  <strong>Modo demo:</strong> Esta conexão simula dados de impressão para testes. Não será usada informação real.
-                </div>
-              )}
             </div>
           </Card>
         </div>

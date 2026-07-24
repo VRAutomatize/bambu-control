@@ -1,7 +1,7 @@
 'use client';
 import { useActionState } from 'react';
 import { inviteMember } from './actions';
-import { IconCheckCircle } from '@/components/icons';
+import { IconCheckCircle, IconAlertTriangle } from '@/components/icons';
 
 export function InviteMemberForm() {
   const [state, formAction, isPending] = useActionState(inviteMember, null);
@@ -17,7 +17,7 @@ export function InviteMemberForm() {
           name="email"
           type="email"
           className="input"
-          placeholder="nome@exemplo.com"
+          placeholder="nome@empresa.com"
           required
           disabled={isPending}
         />
@@ -25,33 +25,32 @@ export function InviteMemberForm() {
 
       <div>
         <label htmlFor="role" className="block text-[12px] font-medium text-neutral-500 dark:text-neutral-400 mb-1.5">
-          Papel
+          Papel do membro
         </label>
         <select name="role" id="role" className="input" disabled={isPending}>
-          <option value="viewer">Visualizador (ler tudo)</option>
-          <option value="operator">Operador (usar impressoras, sincronizar)</option>
-          <option value="admin">Administrador (gerenciar integrações, convites)</option>
+          <option value="viewer">Visualizador — apenas leitura</option>
+          <option value="operator">Operador — usar impressoras, sincronizar</option>
+          <option value="admin">Administrador — gerenciar tudo</option>
         </select>
       </div>
 
       {state?.error && (
-        <div className="rounded-lg bg-red-50 px-3 py-2.5 text-[12px] text-red-600 dark:bg-red-500/15 dark:text-red-400">
-          {state.error}
+        <div className="flex items-start gap-2.5 rounded-lg bg-red-50 px-3 py-2.5 dark:bg-red-500/15">
+          <IconAlertTriangle width={16} height={16} className="mt-0.5 flex-shrink-0 text-red-600 dark:text-red-400" />
+          <p className="text-[12px] text-red-600 dark:text-red-400">{state.error}</p>
         </div>
       )}
 
       {state?.ok && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2.5 dark:bg-green-500/15">
-            <IconCheckCircle width={16} height={16} className="text-green-600 dark:text-green-400" />
-            <div>
-              <p className="text-[12px] font-medium text-green-600 dark:text-green-400">{state.message}</p>
-              {state.link && (
-                <p className="mt-1 text-[11px] text-green-600/70 dark:text-green-400/70">
-                  Link: <code className="font-mono">{state.link}</code>
-                </p>
-              )}
-            </div>
+        <div className="flex items-start gap-2.5 rounded-lg bg-green-50 px-3 py-2.5 dark:bg-green-500/15">
+          <IconCheckCircle width={16} height={16} className="mt-0.5 flex-shrink-0 text-green-600 dark:text-green-400" />
+          <div>
+            <p className="text-[12px] font-medium text-green-600 dark:text-green-400">{state.message}</p>
+            <p className="mt-0.5 text-[11px] text-green-600/75 dark:text-green-400/75">
+              {process.env.NODE_ENV === 'development'
+                ? 'Link de aceitação disponível no console do navegador'
+                : 'Um email com instruções foi enviado'}
+            </p>
           </div>
         </div>
       )}

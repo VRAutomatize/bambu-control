@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { Card } from '@/components/ui';
-import { IconCheckCircle, IconAlertTriangle } from '@/components/icons';
+import { IconAlertTriangle, IconCheckCircle } from '@/components/icons';
 import { AcceptInviteForm } from './accept-invite-form';
 
 export const dynamic = 'force-dynamic';
@@ -15,18 +15,22 @@ export default async function AcceptInvitePage({
   const params = await searchParams;
   const code = params.code as string | undefined;
 
-  if (!code) {
+  // Missing or invalid code
+  if (!code || typeof code !== 'string' || code.length === 0) {
     return (
       <div className="flex h-screen items-center justify-center bg-neutral-50 dark:bg-neutral-950">
         <Card className="max-w-md">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-500/15">
-              <IconAlertTriangle width={16} height={16} />
+          <div className="text-center">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-500/15 mx-auto mb-3">
+              <IconAlertTriangle width={20} height={20} />
             </div>
-            <div>
-              <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Código inválido</h2>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">O código do convite está faltando.</p>
-            </div>
+            <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Link de convite inválido</h2>
+            <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+              O código do convite não foi fornecido ou é inválido.
+            </p>
+            <a href="/" className="mt-4 inline-block text-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
+              Voltar ao início
+            </a>
           </div>
         </Card>
       </div>
@@ -43,26 +47,58 @@ export default async function AcceptInvitePage({
     });
 
     const result = data?.[0];
-    if (error || !result || !result.success) {
+
+    // Success case
+    if (result?.success && result.organization_id) {
       return (
         <div className="flex h-screen items-center justify-center bg-neutral-50 dark:bg-neutral-950">
           <Card className="max-w-md">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-500/15">
-                <IconAlertTriangle width={16} height={16} />
+            <div className="text-center">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-600 dark:bg-green-500/15 mx-auto mb-3">
+                <IconCheckCircle width={20} height={20} />
               </div>
-              <div>
-                <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Convite inválido ou expirado</h2>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">{result?.message || 'Não foi possível aceitar o convite.'}</p>
-              </div>
+              <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                Convite aceito com sucesso!
+              </h2>
+              <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                Você foi adicionado à organização.
+              </p>
+              <button
+                onClick={() => redirect('/dashboard')}
+                className="mt-4 inline-block text-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
+              >
+                Ir para o dashboard
+              </button>
             </div>
           </Card>
         </div>
       );
     }
 
-    // Success — redirect to the organization
-    redirect('/dashboard');
+    // Error case: invalid or expired
+    return (
+      <div className="flex h-screen items-center justify-center bg-neutral-50 dark:bg-neutral-950">
+        <Card className="max-w-md">
+          <div className="text-center">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-500/15 mx-auto mb-3">
+              <IconAlertTriangle width={20} height={20} />
+            </div>
+            <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+              Convite expirado ou inválido
+            </h2>
+            <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+              {result?.message || 'O convite pode ter expirado (válido por 7 dias).'}
+            </p>
+            <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+              Peça a um administrador que envie um novo convite.
+            </p>
+            <a href="/" className="mt-4 inline-block text-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
+              Voltar ao início
+            </a>
+          </div>
+        </Card>
+      </div>
+    );
   } catch (error) {
     // User not authenticated — show login prompt
     return (

@@ -47,15 +47,17 @@ export async function inviteMember(_prev: unknown, formData: FormData) {
     return { error: 'Não foi possível criar o convite.' };
   }
 
-  // TODO: In production, send email with accept link
-  // For now, log it for demo/testing
+  // TODO: In production, send email with accept link via email service
+  // For demo, log to console only (never expose via UI)
   const acceptLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/accept-invite?code=${invite.token}`;
-  console.log(`[DEMO] Invite link for ${email}: ${acceptLink}`);
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[DEMO] Invite link for ${email}: ${acceptLink}`);
+  }
 
   revalidatePath('/configuracoes');
   return {
     ok: true,
-    message: `Convite enviado para ${email}`,
-    link: acceptLink, // Only for demo — remove in production
+    message: `Convite enviado para ${email}. ${process.env.NODE_ENV === 'development' ? 'Verifique o console para o link em modo demo.' : 'Verá o link no email.'}`,
   };
 }

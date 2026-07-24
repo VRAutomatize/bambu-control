@@ -38,16 +38,10 @@ create policy "invites_insert_admin" on public.organization_invites
     public.user_has_org_role(organization_id, array['owner','admin']::public.org_role[])
   );
 
--- Qualquer um pode atualizar um convite se tiver o token correto (aceitar convite)
--- Isso é feito via RPC abaixo, não direto
-create policy "invites_update_self" on public.organization_invites
-  for update using (
-    -- Quando aceitando, qualquer pessoa pode fazer update do seu convite
-    -- Controle via RPC abaixo
-    true
-  ) with check (
-    true
-  );
+-- Apenas a RPC abaixo pode atualizar convites (via SECURITY DEFINER)
+-- Bloqueamos UPDATE diretamente para forçar o fluxo de autenticação via RPC
+create policy "invites_update_deny" on public.organization_invites
+  for update using (false) with check (false);
 
 -- ---------------------------------------------------------------------------
 -- RPC: accept_organization_invite — aceita um convite via token
