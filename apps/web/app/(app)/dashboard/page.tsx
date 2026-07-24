@@ -1,7 +1,7 @@
 import { computeProfit } from '@bambu/domain';
 import { requireCurrentOrg } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
-import { PageHeader, StatCard, Card, StatusBadge, LinkButton } from '@/components/ui';
+import { PageHeader, StatCard, Card, StatusBadge, LinkButton, EmptyState } from '@/components/ui';
 import { formatMoney, formatMargin, formatDuration, formatWeight, formatDateTime } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -54,21 +54,23 @@ export default async function DashboardPage() {
       />
 
       {empty ? (
-        <Card className="text-center">
-          <p className="font-medium">Ainda não há dados.</p>
-          <p className="mt-1 text-sm text-neutral-500">
-            Comece cadastrando uma impressão manual ou conectando a Bambu Cloud.
-          </p>
-          <div className="mt-4 flex justify-center gap-2">
-            <LinkButton href="/impressoes/nova">Cadastrar impressão</LinkButton>
-            <LinkButton href="/integracoes" variant="secondary">
-              Conectar integração
-            </LinkButton>
-          </div>
-        </Card>
+        <EmptyState
+          title="Ainda não há dados"
+          description="Comece cadastrando uma impressão manual ou conectando a Bambu Cloud."
+          action={
+            <div className="mt-2 flex justify-center gap-2">
+              <LinkButton href="/impressoes/nova" icon="plus">
+                Cadastrar impressão
+              </LinkButton>
+              <LinkButton href="/integracoes" variant="secondary">
+                Conectar integração
+              </LinkButton>
+            </div>
+          }
+        />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
             <StatCard label="Receita" value={formatMoney(revenue, org.currency)} hint="Total cobrado (pedidos ativos)" />
             <StatCard label="Custo total" value={formatMoney(totalCost, org.currency)} hint="Soma dos snapshots mais recentes" />
             <StatCard
@@ -84,34 +86,42 @@ export default async function DashboardPage() {
             <StatCard label="A receber" value={formatMoney(receivable, org.currency)} tone="negative" />
           </div>
 
-          <div className="mt-6">
-            <h2 className="mb-3 text-lg font-semibold">Impressões recentes</h2>
+          <div className="mt-8">
+            <h2 className="mb-3 text-[17px] font-semibold tracking-[-0.01em] text-neutral-900 dark:text-neutral-50">
+              Impressões recentes
+            </h2>
             {recent.length === 0 ? (
-              <Card className="text-sm text-neutral-500">Nenhuma impressão ainda.</Card>
+              <Card className="text-[13.5px] text-neutral-500">Nenhuma impressão ainda.</Card>
             ) : (
-              <Card className="p-0">
-                <table className="w-full text-sm">
-                  <thead className="border-b border-neutral-200 text-left text-xs uppercase text-neutral-400 dark:border-neutral-800">
-                    <tr>
-                      <th className="p-3">Título</th>
-                      <th className="p-3">Status</th>
-                      <th className="p-3">Peso</th>
-                      <th className="p-3">Data</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recent.map((r) => (
-                      <tr key={r.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
-                        <td className="p-3 font-medium">{r.title ?? 'Sem título'}</td>
-                        <td className="p-3">
-                          <StatusBadge status={r.normalized_status} />
-                        </td>
-                        <td className="p-3">{formatWeight(r.effective_weight_g)}</td>
-                        <td className="p-3 text-neutral-500">{formatDateTime(r.created_at, org.timezone)}</td>
+              <Card className="overflow-hidden p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="table-head">
+                      <tr>
+                        <th className="table-cell-head">Título</th>
+                        <th className="table-cell-head">Status</th>
+                        <th className="table-cell-head">Peso</th>
+                        <th className="table-cell-head">Data</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {recent.map((r) => (
+                        <tr key={r.id} className="table-row">
+                          <td className="table-cell font-medium text-neutral-900 dark:text-neutral-100">
+                            {r.title ?? 'Sem título'}
+                          </td>
+                          <td className="table-cell">
+                            <StatusBadge status={r.normalized_status} />
+                          </td>
+                          <td className="table-cell">{formatWeight(r.effective_weight_g)}</td>
+                          <td className="table-cell text-neutral-500">
+                            {formatDateTime(r.created_at, org.timezone)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </Card>
             )}
           </div>

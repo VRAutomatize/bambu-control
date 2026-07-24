@@ -5,6 +5,13 @@ import { formatDateTime } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
+const ROLE_LABELS: Record<string, string> = {
+  owner: 'Proprietário',
+  admin: 'Administrador',
+  operator: 'Operador',
+  viewer: 'Visualizador',
+};
+
 export default async function ConfiguracoesPage() {
   const { org } = await requireCurrentOrg();
   const supabase = await createClient();
@@ -20,50 +27,52 @@ export default async function ConfiguracoesPage() {
   return (
     <div>
       <PageHeader title="Configurações" subtitle="Organização, membros e preferências" />
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
         <Card>
-          <h2 className="mb-3 font-semibold">Organização</h2>
-          <dl className="space-y-2 text-sm">
+          <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Organização</h2>
+          <dl className="space-y-2.5 text-[13.5px]">
             <Row label="Nome" value={org.organizationName} />
             <Row label="Moeda" value={org.currency} />
             <Row label="Fuso horário" value={org.timezone} />
-            <Row label="Seu papel" value={org.role} />
+            <Row label="Seu papel" value={ROLE_LABELS[org.role] ?? org.role} />
           </dl>
         </Card>
 
         <Card>
-          <h2 className="mb-3 font-semibold">Suas organizações</h2>
-          <ul className="space-y-1 text-sm">
+          <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Suas organizações</h2>
+          <ul className="space-y-2.5 text-[13.5px]">
             {memberships.map((m) => (
               <li key={m.organizationId} className="flex justify-between">
-                <span>{m.organizationName}</span>
-                <span className="capitalize text-neutral-500">{m.role}</span>
+                <span className="text-neutral-900 dark:text-neutral-100">{m.organizationName}</span>
+                <span className="text-neutral-500">{ROLE_LABELS[m.role] ?? m.role}</span>
               </li>
             ))}
           </ul>
         </Card>
 
         <Card className="lg:col-span-2">
-          <h2 className="mb-3 font-semibold">Membros</h2>
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs uppercase text-neutral-400">
+          <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Membros</h2>
+          <table className="w-full">
+            <thead className="table-head">
               <tr>
-                <th className="py-1">Usuário</th>
-                <th className="py-1">Papel</th>
-                <th className="py-1">Desde</th>
+                <th className="py-2">Usuário</th>
+                <th className="py-2">Papel</th>
+                <th className="py-2">Desde</th>
               </tr>
             </thead>
             <tbody>
               {(members ?? []).map((m) => (
-                <tr key={m.user_id} className="border-t border-neutral-100 dark:border-neutral-800">
-                  <td className="py-1.5 font-mono text-xs">{m.user_id.slice(0, 8)}…</td>
-                  <td className="py-1.5 capitalize">{m.role}</td>
-                  <td className="py-1.5 text-neutral-500">{formatDateTime(m.created_at, org.timezone)}</td>
+                <tr key={m.user_id} className="hairline">
+                  <td className="py-2 font-mono text-[12px] text-neutral-500">{m.user_id.slice(0, 8)}…</td>
+                  <td className="py-2 text-[13.5px]">{ROLE_LABELS[m.role] ?? m.role}</td>
+                  <td className="py-2 text-[13.5px] text-neutral-500">
+                    {formatDateTime(m.created_at, org.timezone)}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="mt-3 text-xs text-neutral-400">
+          <p className="mt-4 text-[12px] text-neutral-400 dark:text-neutral-500">
             Convite de membros e permissões avançadas: próxima iteração.
           </p>
         </Card>
@@ -76,7 +85,7 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between">
       <dt className="text-neutral-500">{label}</dt>
-      <dd className="font-medium">{value}</dd>
+      <dd className="font-medium text-neutral-900 dark:text-neutral-100">{value}</dd>
     </div>
   );
 }

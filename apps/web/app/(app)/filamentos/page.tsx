@@ -50,39 +50,39 @@ export default async function FilamentosPage() {
   return (
     <div>
       <PageHeader title="Filamentos" subtitle="Catálogo de materiais e preços" />
-      <div className="grid gap-4 lg:grid-cols-[1fr,340px]">
+      <div className="grid gap-5 lg:grid-cols-[1fr,340px]">
         <div>
           {!filaments || filaments.length === 0 ? (
             <EmptyState title="Nenhum filamento" description="Cadastre seu primeiro material ao lado." />
           ) : (
-            <Card className="p-0">
-              <table className="w-full text-sm">
-                <thead className="border-b border-neutral-200 text-left text-xs uppercase text-neutral-400 dark:border-neutral-800">
+            <Card className="overflow-hidden p-0">
+              <table className="w-full">
+                <thead className="table-head">
                   <tr>
-                    <th className="p-3">Nome</th>
-                    <th className="p-3">Material</th>
-                    <th className="p-3">Cor</th>
-                    <th className="p-3">Preço/kg</th>
+                    <th className="table-cell-head">Nome</th>
+                    <th className="table-cell-head">Material</th>
+                    <th className="table-cell-head">Cor</th>
+                    <th className="table-cell-head">Preço/kg</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filaments.map((f) => (
-                    <tr key={f.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
-                      <td className="p-3 font-medium">
+                    <tr key={f.id} className="table-row">
+                      <td className="table-cell font-medium text-neutral-900 dark:text-neutral-100">
                         {f.brand ? `${f.brand} — ` : ''}
                         {f.name}
                       </td>
-                      <td className="p-3">{f.material ?? '—'}</td>
-                      <td className="p-3">
+                      <td className="table-cell">{f.material ?? '—'}</td>
+                      <td className="table-cell">
                         <span className="inline-flex items-center gap-2">
                           <span
-                            className="inline-block h-3 w-3 rounded-full border border-neutral-300"
+                            className="inline-block h-3 w-3 rounded-full ring-1 ring-black/10 dark:ring-white/20"
                             style={{ backgroundColor: f.color_hex ?? '#ccc' }}
                           />
                           {f.color_name ?? '—'}
                         </span>
                       </td>
-                      <td className="p-3">{formatMoney(f.default_price_per_kg, org.currency)}</td>
+                      <td className="table-cell tabular-nums">{formatMoney(f.default_price_per_kg, org.currency)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -92,12 +92,12 @@ export default async function FilamentosPage() {
         </div>
 
         <Card>
-          <h2 className="mb-3 font-semibold">Novo filamento</h2>
+          <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Novo filamento</h2>
           <AuthForm action={createFilament} submitLabel="Cadastrar">
             <input name="name" required className="input" placeholder="Nome (ex.: PLA Basic)" />
             <input name="brand" className="input" placeholder="Marca" />
             <input name="material" className="input" placeholder="Material (PLA, PETG…)" />
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2.5">
               <input name="colorName" className="input" placeholder="Cor" />
               <input name="colorHex" className="input" placeholder="#00A651" />
             </div>

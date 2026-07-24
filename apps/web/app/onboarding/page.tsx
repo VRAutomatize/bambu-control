@@ -38,13 +38,24 @@ async function createOrg(_prev: unknown, formData: FormData) {
 export default async function OnboardingPage() {
   await requireUser();
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-100 p-4 dark:bg-neutral-950">
-      <div className="w-full max-w-lg">
-        <h1 className="mb-2 text-2xl font-semibold">Crie seu workspace</h1>
-        <p className="mb-6 text-sm text-neutral-500">
-          Um workspace isola os dados da sua operação. Você poderá convidar sua equipe depois.
-        </p>
-        <div className="card">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f5f5f7] p-4 dark:bg-black">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 opacity-60 [background:radial-gradient(60%_50%_at_50%_0%,theme(colors.brand.100),transparent_70%)] dark:[background:radial-gradient(60%_50%_at_50%_0%,theme(colors.brand.900/.25),transparent_70%)]"
+      />
+      <div className="w-full max-w-[440px]">
+        <div className="mb-6 text-center">
+          <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-[12px] bg-gradient-to-b from-brand-400 to-brand-600 text-[17px] font-bold text-white shadow-sm">
+            B
+          </div>
+          <h1 className="text-[22px] font-semibold tracking-[-0.015em] text-neutral-900 dark:text-neutral-50">
+            Crie seu workspace
+          </h1>
+          <p className="mx-auto mt-1.5 max-w-xs text-[13.5px] text-neutral-500 dark:text-neutral-400">
+            Um workspace isola os dados da sua operação. Você poderá convidar sua equipe depois.
+          </p>
+        </div>
+        <div className="card p-7">
           <AuthForm action={createOrg} submitLabel="Criar workspace e continuar">
             <div>
               <label className="label" htmlFor="name">
@@ -52,7 +63,7 @@ export default async function OnboardingPage() {
               </label>
               <input id="name" name="name" required className="input" placeholder="Ateliê 3D" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label" htmlFor="currency">
                   Moeda

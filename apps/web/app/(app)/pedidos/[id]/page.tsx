@@ -72,7 +72,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
         subtitle={customer?.name ? `Cliente: ${customer.name}` : 'Sem cliente'}
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-5">
         <StatCard label="Receita" value={formatMoney(revenue, org.currency)} />
         <StatCard label="Custo" value={formatMoney(orderCost, org.currency)} />
         <StatCard label="Lucro" value={formatMoney(grossProfit, org.currency)} tone={grossProfit >= 0 ? 'positive' : 'negative'} />
@@ -80,37 +80,39 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
         <StatCard label="Saldo em aberto" value={formatMoney(balance, org.currency)} tone={balance > 0 ? 'negative' : 'default'} />
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <div className="mt-8 grid gap-5 lg:grid-cols-2">
         <Card>
-          <h2 className="mb-3 font-semibold">Itens</h2>
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs uppercase text-neutral-400">
+          <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Itens</h2>
+          <table className="w-full">
+            <thead className="table-head">
               <tr>
-                <th className="py-1">Descrição</th>
-                <th className="py-1">Qtd</th>
-                <th className="py-1">Preço un.</th>
-                <th className="py-1">Total</th>
-                <th className="py-1">Impressões</th>
+                <th className="py-2">Descrição</th>
+                <th className="py-2">Qtd</th>
+                <th className="py-2">Preço un.</th>
+                <th className="py-2">Total</th>
+                <th className="py-2">Impressões</th>
               </tr>
             </thead>
             <tbody>
               {items.map((it) => {
                 const n = assoc.filter((a) => a.order_item_id === it.id).length;
                 return (
-                  <tr key={it.id} className="border-t border-neutral-100 dark:border-neutral-800">
-                    <td className="py-1.5">{it.description}</td>
-                    <td className="py-1.5">{it.quantity}</td>
-                    <td className="py-1.5">{formatMoney(it.unit_price, org.currency)}</td>
-                    <td className="py-1.5">{formatMoney(it.total_price, org.currency)}</td>
-                    <td className="py-1.5">{n}</td>
+                  <tr key={it.id} className="hairline">
+                    <td className="py-2 text-[13.5px]">{it.description}</td>
+                    <td className="py-2 text-[13.5px]">{it.quantity}</td>
+                    <td className="py-2 text-[13.5px]">{formatMoney(it.unit_price, org.currency)}</td>
+                    <td className="py-2 text-[13.5px]">{formatMoney(it.total_price, org.currency)}</td>
+                    <td className="py-2 text-[13.5px]">{n}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
 
-          <div className="mt-4 border-t border-neutral-100 pt-4 dark:border-neutral-800">
-            <h3 className="mb-2 text-sm font-medium">Associar impressão a um item</h3>
+          <div className="mt-5 border-t border-black/[0.06] pt-5 dark:border-white/[0.08]">
+            <h3 className="mb-2.5 text-[13px] font-semibold text-neutral-700 dark:text-neutral-200">
+              Associar impressão a um item
+            </h3>
             <AuthForm action={associateAction} submitLabel="Associar">
               <select name="orderItemId" required className="input">
                 <option value="">— Item —</option>
@@ -134,23 +136,27 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
         </Card>
 
         <Card>
-          <h2 className="mb-3 font-semibold">Pagamentos</h2>
+          <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Pagamentos</h2>
           {payments.length === 0 ? (
-            <p className="text-sm text-neutral-500">Nenhum pagamento registrado.</p>
+            <p className="text-[13.5px] text-neutral-500">Nenhum pagamento registrado.</p>
           ) : (
-            <table className="mb-4 w-full text-sm">
+            <table className="mb-5 w-full">
               <tbody>
                 {payments.map((p) => (
-                  <tr key={p.id} className="border-b border-neutral-100 dark:border-neutral-800">
-                    <td className="py-1.5">{formatDate(p.paid_at, org.timezone)}</td>
-                    <td className="py-1.5">{p.payment_method ?? '—'}</td>
-                    <td className="py-1.5 text-right font-medium">{formatMoney(p.amount, org.currency)}</td>
+                  <tr key={p.id} className="hairline">
+                    <td className="py-2 text-[13.5px] text-neutral-500">{formatDate(p.paid_at, org.timezone)}</td>
+                    <td className="py-2 text-[13.5px] text-neutral-500">{p.payment_method ?? '—'}</td>
+                    <td className="py-2 text-right text-[13.5px] font-medium tabular-nums text-neutral-900 dark:text-neutral-100">
+                      {formatMoney(p.amount, org.currency)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
-          <h3 className="mb-2 text-sm font-medium">Registrar pagamento</h3>
+          <h3 className="mb-2.5 text-[13px] font-semibold text-neutral-700 dark:text-neutral-200">
+            Registrar pagamento
+          </h3>
           <AuthForm action={paymentAction} submitLabel="Registrar">
             <input name="amount" type="number" min="0.01" step="0.01" required className="input" placeholder="Valor (R$)" />
             <select name="paymentMethod" className="input" defaultValue="pix">

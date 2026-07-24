@@ -55,10 +55,10 @@ export default async function RelatoriosPage() {
       {empty ? (
         <EmptyState title="Sem dados para relatório" description="Cadastre impressões e pedidos." />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-5 lg:grid-cols-2">
           <Card>
-            <h2 className="mb-3 font-semibold">Resultado geral</h2>
-            <dl className="space-y-2 text-sm">
+            <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Resultado geral</h2>
+            <dl className="space-y-2.5 text-[13.5px]">
               <Line label="Receita" value={formatMoney(totalRevenue, org.currency)} />
               <Line label="Custo total" value={formatMoney(totalCost, org.currency)} />
               <Line label="Lucro" value={formatMoney(grossProfit, org.currency)} />
@@ -67,26 +67,26 @@ export default async function RelatoriosPage() {
           </Card>
 
           <Card>
-            <h2 className="mb-3 font-semibold">Consumo de material</h2>
-            <dl className="space-y-2 text-sm">
+            <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Consumo de material</h2>
+            <dl className="space-y-2.5 text-[13.5px]">
               <Line label="Filamento consumido" value={formatWeight(totalGrams)} />
               <Line label="Custo de material" value={formatMoney(totalMaterialCost, org.currency)} />
             </dl>
           </Card>
 
           <Card className="lg:col-span-2">
-            <h2 className="mb-3 font-semibold">Receita por cliente</h2>
+            <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Receita por cliente</h2>
             {byCustomer.size === 0 ? (
-              <p className="text-sm text-neutral-500">Sem pedidos.</p>
+              <p className="text-[13.5px] text-neutral-500">Sem pedidos.</p>
             ) : (
-              <table className="w-full text-sm">
+              <table className="w-full">
                 <tbody>
                   {[...byCustomer.entries()]
                     .sort((a, b) => b[1] - a[1])
                     .map(([name, value]) => (
-                      <tr key={name} className="border-b border-neutral-100 dark:border-neutral-800">
-                        <td className="py-1.5">{name}</td>
-                        <td className="py-1.5 text-right font-medium">
+                      <tr key={name} className="hairline">
+                        <td className="py-2 text-[13.5px]">{name}</td>
+                        <td className="py-2 text-right text-[13.5px] font-medium tabular-nums text-neutral-900 dark:text-neutral-100">
                           {formatMoney(value, org.currency)}
                         </td>
                       </tr>
@@ -105,7 +105,7 @@ function Line({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between">
       <dt className="text-neutral-500">{label}</dt>
-      <dd className="font-medium">{value}</dd>
+      <dd className="font-medium text-neutral-900 dark:text-neutral-100">{value}</dd>
     </div>
   );
 }

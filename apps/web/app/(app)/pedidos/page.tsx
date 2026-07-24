@@ -31,43 +31,47 @@ export default async function PedidosPage() {
       <PageHeader
         title="Pedidos"
         subtitle="Vendas, pagamentos e lucro"
-        action={<LinkButton href="/pedidos/nova">Novo pedido</LinkButton>}
+        action={
+          <LinkButton href="/pedidos/nova" icon="plus">
+            Novo pedido
+          </LinkButton>
+        }
       />
       {!orders || orders.length === 0 ? (
         <EmptyState title="Nenhum pedido" description="Crie seu primeiro pedido." />
       ) : (
-        <Card className="p-0">
+        <Card className="overflow-hidden p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b border-neutral-200 text-left text-xs uppercase text-neutral-400 dark:border-neutral-800">
+            <table className="w-full">
+              <thead className="table-head">
                 <tr>
-                  <th className="p-3">Número</th>
-                  <th className="p-3">Cliente</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3">Total</th>
-                  <th className="p-3">Pago</th>
-                  <th className="p-3">Data</th>
+                  <th className="table-cell-head">Número</th>
+                  <th className="table-cell-head">Cliente</th>
+                  <th className="table-cell-head">Status</th>
+                  <th className="table-cell-head">Total</th>
+                  <th className="table-cell-head">Pago</th>
+                  <th className="table-cell-head">Data</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.map((o) => {
                   const customer = o.customers as unknown as { name: string } | null;
                   return (
-                    <tr key={o.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800/50">
-                      <td className="p-3 font-medium">
+                    <tr key={o.id} className="table-row">
+                      <td className="table-cell font-medium text-neutral-900 dark:text-neutral-100">
                         <Link href={`/pedidos/${o.id}`} className="hover:text-brand-600">
                           {o.order_number}
                         </Link>
                       </td>
-                      <td className="p-3">{customer?.name ?? '—'}</td>
-                      <td className="p-3">
-                        <span className="badge bg-neutral-100 text-neutral-700">
+                      <td className="table-cell">{customer?.name ?? '—'}</td>
+                      <td className="table-cell">
+                        <span className="badge bg-neutral-100 text-neutral-600 dark:bg-white/10 dark:text-neutral-300">
                           {STATUS_LABELS[o.status] ?? o.status}
                         </span>
                       </td>
-                      <td className="p-3">{formatMoney(o.total_charged, org.currency)}</td>
-                      <td className="p-3">{formatMoney(o.total_paid, org.currency)}</td>
-                      <td className="p-3 text-neutral-500">{formatDate(o.ordered_at, org.timezone)}</td>
+                      <td className="table-cell tabular-nums">{formatMoney(o.total_charged, org.currency)}</td>
+                      <td className="table-cell tabular-nums">{formatMoney(o.total_paid, org.currency)}</td>
+                      <td className="table-cell text-neutral-500">{formatDate(o.ordered_at, org.timezone)}</td>
                     </tr>
                   );
                 })}

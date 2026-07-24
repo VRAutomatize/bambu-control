@@ -4,9 +4,11 @@ import { signUp } from '../actions';
 
 export default function SignupPage() {
   return (
-    <div className="card">
-      <h1 className="mb-1 text-lg font-semibold">Criar conta</h1>
-      <p className="mb-5 text-sm text-neutral-500">Comece a controlar seus custos de impressão 3D.</p>
+    <div className="card p-7">
+      <h1 className="mb-1 text-[19px] font-semibold tracking-[-0.01em]">Criar conta</h1>
+      <p className="mb-6 text-[13.5px] text-neutral-500 dark:text-neutral-400">
+        Comece a controlar seus custos de impressão 3D.
+      </p>
       <AuthForm action={signUp} submitLabel="Criar conta">
         <div>
           <label className="label" htmlFor="fullName">
@@ -33,12 +35,14 @@ export default function SignupPage() {
             className="input"
             autoComplete="new-password"
           />
-          <p className="mt-1 text-xs text-neutral-400">Mínimo de 8 caracteres.</p>
+          <p className="mt-1.5 text-[11.5px] text-neutral-400 dark:text-neutral-500">
+            Mínimo de 8 caracteres.
+          </p>
         </div>
       </AuthForm>
-      <p className="mt-4 text-center text-sm text-neutral-500">
+      <p className="mt-5 text-center text-[13px] text-neutral-500 dark:text-neutral-400">
         Já tem conta?{' '}
-        <Link href="/login" className="text-brand-600 hover:underline">
+        <Link href="/login" className="text-brand-600 hover:text-brand-700 dark:text-brand-400">
           Entrar
         </Link>
       </p>

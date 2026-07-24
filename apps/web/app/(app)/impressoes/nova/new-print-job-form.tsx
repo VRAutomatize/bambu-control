@@ -1,5 +1,6 @@
 'use client';
 import { useActionState, useState } from 'react';
+import { IconAlertTriangle, IconPlus } from '@/components/icons';
 import { createManualPrintJob } from '../actions';
 
 type Option = { id: string; label: string };
@@ -19,11 +20,11 @@ export function NewPrintJobForm({
   const [materialRows, setMaterialRows] = useState([0]);
 
   return (
-    <form action={action} className="space-y-5">
+    <form action={action} className="space-y-7">
       <div className="grid gap-4 md:grid-cols-2">
         <div className="md:col-span-2">
           <label className="label" htmlFor="title">
-            Título *
+            Título
           </label>
           <input id="title" name="title" required className="input" placeholder="Suporte de fone" />
         </div>
@@ -69,7 +70,7 @@ export function NewPrintJobForm({
           <input id="manualWeightG" name="manualWeightG" type="number" min="0" step="0.1" className="input" />
         </div>
 
-        <div>
+        <div className="md:col-span-2">
           <label className="label" htmlFor="quantityProduced">
             Quantidade produzida
           </label>
@@ -80,14 +81,21 @@ export function NewPrintJobForm({
             min="0"
             step="1"
             defaultValue="1"
-            className="input"
+            className="input md:w-40"
           />
         </div>
       </div>
 
-      <fieldset className="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-        <legend className="px-2 text-sm font-medium">Materiais</legend>
-        <div className="space-y-3">
+      <div>
+        <div className="mb-3 flex items-baseline justify-between">
+          <h3 className="text-[13px] font-semibold text-neutral-700 dark:text-neutral-200">
+            Materiais
+          </h3>
+          <p className="text-[11.5px] text-neutral-400 dark:text-neutral-500">
+            Preço/kg capturado do cadastro no momento do registro
+          </p>
+        </div>
+        <div className="space-y-2 rounded-2xl border border-black/[0.06] bg-black/[0.015] p-3 dark:border-white/[0.07] dark:bg-white/[0.02]">
           {materialRows.map((row, idx) => (
             <div key={row} className="grid grid-cols-[1fr,140px,auto] gap-2">
               <select name="materialFilamentId" className="input" defaultValue="">
@@ -106,72 +114,81 @@ export function NewPrintJobForm({
                 placeholder="Peso (g)"
                 className="input"
               />
-              {idx > 0 && (
+              {idx > 0 ? (
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className="btn-ghost px-2.5"
                   onClick={() => setMaterialRows((rows) => rows.filter((r) => r !== row))}
+                  aria-label="Remover material"
                 >
-                  Remover
+                  ✕
                 </button>
+              ) : (
+                <span />
               )}
             </div>
           ))}
+          <button
+            type="button"
+            className="btn-ghost text-[12.5px]"
+            onClick={() => setMaterialRows((rows) => [...rows, Math.max(...rows) + 1])}
+          >
+            <IconPlus width={13} height={13} strokeWidth={2} />
+            Adicionar material
+          </button>
         </div>
-        <button
-          type="button"
-          className="btn-secondary mt-3 text-xs"
-          onClick={() => setMaterialRows((rows) => [...rows, Math.max(...rows) + 1])}
-        >
-          + Adicionar material
-        </button>
-        <p className="mt-2 text-xs text-neutral-400">
-          O preço por kg é capturado do cadastro do filamento no momento do registro (snapshot).
-        </p>
-      </fieldset>
+      </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <div>
-          <label className="label" htmlFor="laborCost">
-            Mão de obra (R$)
-          </label>
-          <input id="laborCost" name="laborCost" type="number" min="0" step="0.01" defaultValue="0" className="input" />
-        </div>
-        <div>
-          <label className="label" htmlFor="packagingCost">
-            Embalagem (R$)
-          </label>
-          <input id="packagingCost" name="packagingCost" type="number" min="0" step="0.01" defaultValue="0" className="input" />
-        </div>
-        <div>
-          <label className="label" htmlFor="otherCost">
-            Outros (R$)
-          </label>
-          <input id="otherCost" name="otherCost" type="number" min="0" step="0.01" defaultValue="0" className="input" />
-        </div>
-        <div>
-          <label className="label" htmlFor="failurePercentage">
-            Reserva falha (%)
-          </label>
-          <input
-            id="failurePercentage"
-            name="failurePercentage"
-            type="number"
-            min="0"
-            max="100"
-            step="0.1"
-            defaultValue="0"
-            className="input"
-          />
+      <div>
+        <h3 className="mb-3 text-[13px] font-semibold text-neutral-700 dark:text-neutral-200">
+          Custos adicionais
+        </h3>
+        <div className="grid gap-4 md:grid-cols-4">
+          <div>
+            <label className="label" htmlFor="laborCost">
+              Mão de obra (R$)
+            </label>
+            <input id="laborCost" name="laborCost" type="number" min="0" step="0.01" defaultValue="0" className="input" />
+          </div>
+          <div>
+            <label className="label" htmlFor="packagingCost">
+              Embalagem (R$)
+            </label>
+            <input id="packagingCost" name="packagingCost" type="number" min="0" step="0.01" defaultValue="0" className="input" />
+          </div>
+          <div>
+            <label className="label" htmlFor="otherCost">
+              Outros (R$)
+            </label>
+            <input id="otherCost" name="otherCost" type="number" min="0" step="0.01" defaultValue="0" className="input" />
+          </div>
+          <div>
+            <label className="label" htmlFor="failurePercentage">
+              Reserva falha (%)
+            </label>
+            <input
+              id="failurePercentage"
+              name="failurePercentage"
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              defaultValue="0"
+              className="input"
+            />
+          </div>
         </div>
       </div>
 
       {state?.error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
+        <p className="flex items-start gap-2 rounded-xl bg-red-50 px-3.5 py-2.5 text-[13px] text-red-700 dark:bg-red-500/10 dark:text-red-300">
+          <IconAlertTriangle width={15} height={15} className="mt-0.5 shrink-0" />
+          {state.error}
+        </p>
       )}
 
-      <div className="flex gap-2">
-        <button type="submit" className="btn-primary" disabled={pending}>
+      <div className="flex gap-2 border-t border-black/[0.06] pt-6 dark:border-white/[0.08]">
+        <button type="submit" className="btn-primary px-5 py-2.5" disabled={pending}>
           {pending ? 'Salvando…' : 'Salvar e calcular custo'}
         </button>
       </div>

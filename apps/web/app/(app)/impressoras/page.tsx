@@ -3,7 +3,8 @@ import { requireCurrentOrg, canWrite } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader, Card, EmptyState } from '@/components/ui';
 import { AuthForm } from '@/components/auth-form';
-import { formatMoney, formatDateTime } from '@/lib/format';
+import { IconPrinter } from '@/components/icons';
+import { formatDateTime } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,25 +62,34 @@ export default async function ImpressorasPage() {
   return (
     <div>
       <PageHeader title="Impressoras" subtitle="Equipamentos e perfis de custo" />
-      <div className="grid gap-4 lg:grid-cols-[1fr,360px]">
+      <div className="grid gap-5 lg:grid-cols-[1fr,360px]">
         <div>
           {!printers || printers.length === 0 ? (
             <EmptyState title="Nenhuma impressora" description="Cadastre sua primeira máquina ao lado." />
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3.5 sm:grid-cols-2">
               {printers.map((p) => (
                 <Card key={p.id}>
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium">{p.name}</h3>
-                    <span className={`badge ${p.active ? 'bg-brand-100 text-brand-800' : 'bg-neutral-100 text-neutral-500'}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-neutral-100 text-neutral-500 dark:bg-white/[0.06] dark:text-neutral-400">
+                        <IconPrinter width={17} height={17} />
+                      </div>
+                      <h3 className="text-[14px] font-semibold text-neutral-900 dark:text-neutral-100">
+                        {p.name}
+                      </h3>
+                    </div>
+                    <span
+                      className={`badge shrink-0 ${p.active ? 'bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-400' : 'bg-neutral-100 text-neutral-500 dark:bg-white/10 dark:text-neutral-400'}`}
+                    >
                       {p.active ? 'Ativa' : 'Inativa'}
                     </span>
                   </div>
-                  <dl className="mt-2 space-y-1 text-sm text-neutral-500">
-                    <div>Modelo: {p.model ?? '—'}</div>
-                    <div>Local: {p.location ?? '—'}</div>
-                    <div>Serial: {maskSerial(p.serial_number)}</div>
-                    <div>Última sync: {formatDateTime(p.last_seen_at, org.timezone)}</div>
+                  <dl className="mt-3.5 space-y-1.5 text-[13px]">
+                    <PrinterRow label="Modelo" value={p.model ?? '—'} />
+                    <PrinterRow label="Local" value={p.location ?? '—'} />
+                    <PrinterRow label="Serial" value={maskSerial(p.serial_number)} />
+                    <PrinterRow label="Última sync" value={formatDateTime(p.last_seen_at, org.timezone)} />
                   </dl>
                 </Card>
               ))}
@@ -88,13 +98,15 @@ export default async function ImpressorasPage() {
         </div>
 
         <Card>
-          <h2 className="mb-3 font-semibold">Nova impressora</h2>
+          <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Nova impressora</h2>
           <AuthForm action={createPrinter} submitLabel="Cadastrar">
             <input name="name" required className="input" placeholder="Nome (ex.: X1C-Oficina)" />
             <input name="model" className="input" placeholder="Modelo (X1 Carbon…)" />
             <input name="location" className="input" placeholder="Local" />
-            <p className="pt-1 text-xs font-medium text-neutral-400">Perfil de custo (modo calculado)</p>
-            <div className="grid grid-cols-2 gap-2">
+            <p className="pb-0.5 pt-2 text-[11.5px] font-medium uppercase tracking-wide text-neutral-400">
+              Perfil de custo (modo calculado)
+            </p>
+            <div className="grid grid-cols-2 gap-2.5">
               <input name="purchasePrice" type="number" step="0.01" className="input" placeholder="Preço compra" />
               <input name="residualValue" type="number" step="0.01" className="input" placeholder="Valor residual" />
               <input name="usefulLifeHours" type="number" step="1" className="input" placeholder="Vida útil (h)" />
@@ -106,6 +118,15 @@ export default async function ImpressorasPage() {
           </AuthForm>
         </Card>
       </div>
+    </div>
+  );
+}
+
+function PrinterRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between">
+      <dt className="text-neutral-400 dark:text-neutral-500">{label}</dt>
+      <dd className="font-medium text-neutral-700 dark:text-neutral-300">{value}</dd>
     </div>
   );
 }

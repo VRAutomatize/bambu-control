@@ -47,30 +47,30 @@ export default async function ClientesPage() {
   return (
     <div>
       <PageHeader title="Clientes" subtitle="Cadastro e histórico de clientes" />
-      <div className="grid gap-4 lg:grid-cols-[1fr,320px]">
+      <div className="grid gap-5 lg:grid-cols-[1fr,320px]">
         <div>
           {!customers || customers.length === 0 ? (
             <EmptyState title="Nenhum cliente" description="Cadastre seu primeiro cliente ao lado." />
           ) : (
-            <Card className="p-0">
-              <table className="w-full text-sm">
-                <thead className="border-b border-neutral-200 text-left text-xs uppercase text-neutral-400 dark:border-neutral-800">
+            <Card className="overflow-hidden p-0">
+              <table className="w-full">
+                <thead className="table-head">
                   <tr>
-                    <th className="p-3">Nome</th>
-                    <th className="p-3">E-mail</th>
-                    <th className="p-3">WhatsApp</th>
+                    <th className="table-cell-head">Nome</th>
+                    <th className="table-cell-head">E-mail</th>
+                    <th className="table-cell-head">WhatsApp</th>
                   </tr>
                 </thead>
                 <tbody>
                   {customers.map((c) => (
-                    <tr key={c.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
-                      <td className="p-3 font-medium">
+                    <tr key={c.id} className="table-row">
+                      <td className="table-cell font-medium text-neutral-900 dark:text-neutral-100">
                         <Link href={`/pedidos?customer=${c.id}`} className="hover:text-brand-600">
                           {c.name}
                         </Link>
                       </td>
-                      <td className="p-3 text-neutral-500">{c.email ?? '—'}</td>
-                      <td className="p-3 text-neutral-500">{c.whatsapp ?? '—'}</td>
+                      <td className="table-cell text-neutral-500">{c.email ?? '—'}</td>
+                      <td className="table-cell text-neutral-500">{c.whatsapp ?? '—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -80,7 +80,7 @@ export default async function ClientesPage() {
         </div>
 
         <Card>
-          <h2 className="mb-3 font-semibold">Novo cliente</h2>
+          <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Novo cliente</h2>
           <AuthForm action={createCustomer} submitLabel="Cadastrar">
             <input name="name" required className="input" placeholder="Nome" />
             <input name="email" type="email" className="input" placeholder="E-mail" />

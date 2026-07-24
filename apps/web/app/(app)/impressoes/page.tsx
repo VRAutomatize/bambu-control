@@ -35,11 +35,15 @@ export default async function ImpressoesPage({
       <PageHeader
         title="Impressões"
         subtitle="Histórico de impressões e custos"
-        action={<LinkButton href="/impressoes/nova">Nova impressão</LinkButton>}
+        action={
+          <LinkButton href="/impressoes/nova" icon="plus">
+            Nova impressão
+          </LinkButton>
+        }
       />
 
-      <Card className="mb-4">
-        <form className="flex flex-wrap gap-3">
+      <Card className="mb-5">
+        <form className="flex flex-wrap gap-2.5">
           <input
             name="q"
             placeholder="Buscar por título…"
@@ -65,37 +69,34 @@ export default async function ImpressoesPage({
           description="Cadastre uma impressão manual ou sincronize a Bambu Cloud."
         />
       ) : (
-        <Card className="p-0">
+        <Card className="overflow-hidden p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b border-neutral-200 text-left text-xs uppercase text-neutral-400 dark:border-neutral-800">
+            <table className="w-full">
+              <thead className="table-head">
                 <tr>
-                  <th className="p-3">Título</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3">Duração</th>
-                  <th className="p-3">Peso</th>
-                  <th className="p-3">Origem</th>
-                  <th className="p-3">Data</th>
+                  <th className="table-cell-head">Título</th>
+                  <th className="table-cell-head">Status</th>
+                  <th className="table-cell-head">Duração</th>
+                  <th className="table-cell-head">Peso</th>
+                  <th className="table-cell-head">Origem</th>
+                  <th className="table-cell-head">Data</th>
                 </tr>
               </thead>
               <tbody>
                 {jobs.map((j) => (
-                  <tr
-                    key={j.id}
-                    className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800/50"
-                  >
-                    <td className="p-3 font-medium">
+                  <tr key={j.id} className="table-row">
+                    <td className="table-cell font-medium text-neutral-900 dark:text-neutral-100">
                       <Link href={`/impressoes/${j.id}`} className="hover:text-brand-600">
                         {j.title ?? 'Sem título'}
                       </Link>
                     </td>
-                    <td className="p-3">
+                    <td className="table-cell">
                       <StatusBadge status={j.normalized_status} />
                     </td>
-                    <td className="p-3">{formatDuration(j.effective_duration_s)}</td>
-                    <td className="p-3">{formatWeight(j.effective_weight_g)}</td>
-                    <td className="p-3 text-neutral-500">{j.source}</td>
-                    <td className="p-3 text-neutral-500">
+                    <td className="table-cell">{formatDuration(j.effective_duration_s)}</td>
+                    <td className="table-cell">{formatWeight(j.effective_weight_g)}</td>
+                    <td className="table-cell text-neutral-500">{j.source}</td>
+                    <td className="table-cell text-neutral-500">
                       {formatDateTime(j.created_at, org.timezone)}
                     </td>
                   </tr>

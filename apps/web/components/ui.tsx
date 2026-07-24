@@ -1,5 +1,12 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import {
+  IconAlertTriangle,
+  IconCheckCircle,
+  IconClock,
+  IconInbox,
+  IconPlus,
+} from './icons';
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <div className={`card ${className}`}>{children}</div>;
@@ -15,15 +22,25 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex items-start justify-between gap-4">
+    <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-neutral-500">{subtitle}</p>}
+        <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.02em] text-neutral-900 dark:text-neutral-50">
+          {title}
+        </h1>
+        {subtitle && (
+          <p className="mt-1 text-[15px] text-neutral-500 dark:text-neutral-400">{subtitle}</p>
+        )}
       </div>
       {action}
     </div>
   );
 }
+
+const TONE_STYLES: Record<string, string> = {
+  default: 'text-neutral-900 dark:text-neutral-50',
+  positive: 'text-brand-600 dark:text-brand-400',
+  negative: 'text-red-500',
+};
 
 export function StatCard({
   label,
@@ -36,39 +53,53 @@ export function StatCard({
   hint?: string;
   tone?: 'default' | 'positive' | 'negative';
 }) {
-  const toneClass =
-    tone === 'positive'
-      ? 'text-brand-600'
-      : tone === 'negative'
-        ? 'text-red-600'
-        : 'text-neutral-900 dark:text-neutral-100';
   return (
-    <Card>
-      <p className="text-sm text-neutral-500" title={hint}>
+    <Card className="flex flex-col gap-1.5">
+      <p className="text-[13px] font-medium text-neutral-500 dark:text-neutral-400" title={hint}>
         {label}
       </p>
-      <p className={`mt-2 text-2xl font-semibold ${toneClass}`}>{value}</p>
-      {hint && <p className="mt-1 text-xs text-neutral-400">{hint}</p>}
+      <p className={`text-[26px] font-semibold tracking-[-0.02em] ${TONE_STYLES[tone]}`}>
+        {value}
+      </p>
+      {hint && <p className="text-[12px] text-neutral-400 dark:text-neutral-500">{hint}</p>}
     </Card>
   );
 }
 
-export function EmptyState({ title, description }: { title: string; description?: string }) {
+export function EmptyState({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+}) {
   return (
-    <Card className="text-center">
-      <p className="font-medium text-neutral-700 dark:text-neutral-200">{title}</p>
-      {description && <p className="mt-1 text-sm text-neutral-500">{description}</p>}
+    <Card className="flex flex-col items-center gap-3 px-6 py-14 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 dark:bg-white/5 dark:text-neutral-500">
+        <IconInbox width={22} height={22} />
+      </div>
+      <div>
+        <p className="font-medium text-neutral-800 dark:text-neutral-100">{title}</p>
+        {description && (
+          <p className="mx-auto mt-1 max-w-sm text-[13px] text-neutral-500 dark:text-neutral-400">
+            {description}
+          </p>
+        )}
+      </div>
+      {action}
     </Card>
   );
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  completed: 'bg-brand-100 text-brand-800',
-  printing: 'bg-blue-100 text-blue-800',
-  pending: 'bg-neutral-100 text-neutral-700',
-  failed: 'bg-red-100 text-red-800',
-  cancelled: 'bg-amber-100 text-amber-800',
-  unknown: 'bg-neutral-100 text-neutral-500',
+  completed: 'bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-400',
+  printing: 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
+  pending: 'bg-neutral-100 text-neutral-600 dark:bg-white/10 dark:text-neutral-300',
+  failed: 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-400',
+  cancelled: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+  unknown: 'bg-neutral-100 text-neutral-500 dark:bg-white/10 dark:text-neutral-400',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -80,9 +111,19 @@ const STATUS_LABELS: Record<string, string> = {
   unknown: 'Desconhecido',
 };
 
+const STATUS_DOT: Record<string, string> = {
+  completed: 'bg-brand-500',
+  printing: 'bg-blue-500',
+  pending: 'bg-neutral-400',
+  failed: 'bg-red-500',
+  cancelled: 'bg-amber-500',
+  unknown: 'bg-neutral-400',
+};
+
 export function StatusBadge({ status }: { status: string }) {
   return (
     <span className={`badge ${STATUS_STYLES[status] ?? STATUS_STYLES.unknown}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[status] ?? STATUS_DOT.unknown}`} />
       {STATUS_LABELS[status] ?? status}
     </span>
   );
@@ -92,14 +133,42 @@ export function LinkButton({
   href,
   children,
   variant = 'primary',
+  icon,
 }: {
   href: string;
   children: ReactNode;
   variant?: 'primary' | 'secondary';
+  icon?: 'plus';
 }) {
   return (
     <Link href={href} className={variant === 'primary' ? 'btn-primary' : 'btn-secondary'}>
+      {icon === 'plus' && <IconPlus width={15} height={15} strokeWidth={2} />}
       {children}
     </Link>
   );
+}
+
+export function InlineAlert({
+  tone = 'info',
+  children,
+}: {
+  tone?: 'info' | 'warning' | 'success';
+  children: ReactNode;
+}) {
+  const styles = {
+    info: 'bg-blue-50 text-blue-800 dark:bg-blue-500/10 dark:text-blue-300',
+    warning: 'bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300',
+    success: 'bg-brand-50 text-brand-800 dark:bg-brand-500/10 dark:text-brand-300',
+  }[tone];
+  const Icon = tone === 'warning' ? IconAlertTriangle : tone === 'success' ? IconCheckCircle : IconClock;
+  return (
+    <div className={`flex items-start gap-2.5 rounded-2xl px-4 py-3 text-[13px] leading-relaxed ${styles}`}>
+      <Icon width={16} height={16} className="mt-0.5 shrink-0" />
+      <span>{children}</span>
+    </div>
+  );
+}
+
+export function Divider() {
+  return <div className="hairline" />;
 }
