@@ -4,20 +4,24 @@ import { IconAlertTriangle, IconPlus } from '@/components/icons';
 import { createManualPrintJob } from '../actions';
 
 type Option = { id: string; label: string };
+type SpoolOption = { id: string; filamentId: string; label: string };
 type State = { error?: string } | undefined;
 
 export function NewPrintJobForm({
   filaments,
   printers,
+  spools,
 }: {
   filaments: Option[];
   printers: Option[];
+  spools: SpoolOption[];
 }) {
   const [state, action, pending] = useActionState<State, FormData>(
     createManualPrintJob,
     undefined,
   );
   const [materialRows, setMaterialRows] = useState([0]);
+  const [rowFilament, setRowFilament] = useState<Record<number, string>>({});
 
   return (
     <form action={action} className="space-y-7">
@@ -96,38 +100,63 @@ export function NewPrintJobForm({
           </p>
         </div>
         <div className="space-y-2 rounded-2xl border border-black/[0.06] bg-black/[0.015] p-3 dark:border-white/[0.07] dark:bg-white/[0.02]">
-          {materialRows.map((row, idx) => (
-            <div key={row} className="grid grid-cols-[1fr,140px,auto] gap-2">
-              <select name="materialFilamentId" className="input" defaultValue="">
-                <option value="">— Filamento —</option>
-                {filaments.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.label}
-                  </option>
-                ))}
-              </select>
-              <input
-                name="materialWeightG"
-                type="number"
-                min="0"
-                step="0.1"
-                placeholder="Peso (g)"
-                className="input"
-              />
-              {idx > 0 ? (
-                <button
-                  type="button"
-                  className="btn-ghost px-2.5"
-                  onClick={() => setMaterialRows((rows) => rows.filter((r) => r !== row))}
-                  aria-label="Remover material"
+          {materialRows.map((row, idx) => {
+            const selectedFilament = rowFilament[row];
+            const availableSpools = selectedFilament
+              ? spools.filter((s) => s.filamentId === selectedFilament)
+              : [];
+            return (
+              <div key={row} className="grid grid-cols-[1fr,1fr,110px,auto] gap-2">
+                <select
+                  name="materialFilamentId"
+                  className="input"
+                  defaultValue=""
+                  onChange={(e) => setRowFilament((prev) => ({ ...prev, [row]: e.target.value }))}
                 >
-                  ✕
-                </button>
-              ) : (
-                <span />
-              )}
-            </div>
-          ))}
+                  <option value="">— Filamento —</option>
+                  {filaments.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.label}
+                    </option>
+                  ))}
+                </select>
+                <select name="materialSpoolId" className="input" defaultValue="" disabled={!selectedFilament}>
+                  <option value="">
+                    {selectedFilament
+                      ? availableSpools.length > 0
+                        ? '— Rolo (opcional) —'
+                        : 'Sem rolos em estoque'
+                      : 'Selecione o filamento primeiro'}
+                  </option>
+                  {availableSpools.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  name="materialWeightG"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder="Peso (g)"
+                  className="input"
+                />
+                {idx > 0 ? (
+                  <button
+                    type="button"
+                    className="btn-ghost px-2.5"
+                    onClick={() => setMaterialRows((rows) => rows.filter((r) => r !== row))}
+                    aria-label="Remover material"
+                  >
+                    ✕
+                  </button>
+                ) : (
+                  <span />
+                )}
+              </div>
+            );
+          })}
           <button
             type="button"
             className="btn-ghost text-[12.5px]"

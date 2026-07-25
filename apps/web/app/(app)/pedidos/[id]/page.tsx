@@ -25,6 +25,9 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 
   const [itemsRes, assocRes, paymentsRes, jobsRes, snapsRes] = await Promise.all([
     supabase.from('order_items').select('*').eq('order_id', id),
+    // Todos os vínculos da org (não só deste pedido) — usado tanto para o
+    // custo deste pedido quanto para calcular quantas unidades de cada
+    // impressão ainda estão disponíveis para vender.
     supabase
       .from('order_item_print_jobs')
       .select('order_item_id, print_job_id, allocated_quantity')
@@ -41,10 +44,21 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 
   const items = itemsRes.data ?? [];
   const itemIds = new Set(items.map((it) => it.id));
-  const assoc = (assocRes.data ?? []).filter((a) => itemIds.has(a.order_item_id));
+  const allAssoc = assocRes.data ?? [];
+  const assoc = allAssoc.filter((a) => itemIds.has(a.order_item_id));
   const payments = paymentsRes.data ?? [];
-  const jobs = jobsRes.data ?? [];
-  const jobById = new Map(jobs.map((j) => [j.id, j]));
+
+  const allocatedByJob = new Map<string, number>();
+  for (const a of allAssoc) {
+    allocatedByJob.set(a.print_job_id, (allocatedByJob.get(a.print_job_id) ?? 0) + (Number(a.allocated_quantity) || 0));
+  }
+  const jobById = new Map((jobsRes.data ?? []).map((j) => [j.id, j]));
+  const jobs = (jobsRes.data ?? [])
+    .map((j) => ({
+      ...j,
+      quantityAvailable: Math.max(Number(j.quantity_produced) - (allocatedByJob.get(j.id) ?? 0), 0),
+    }))
+    .filter((j) => j.quantityAvailable > 0);
   const costByJob = new Map((snapsRes.data ?? []).map((s) => [s.print_job_id, Number(s.total_cost) || 0]));
 
   // Custo do pedido: soma por associação (allocated_quantity * custo por unidade).
@@ -126,7 +140,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                 <option value="">— Impressão —</option>
                 {jobs.map((j) => (
                   <option key={j.id} value={j.id}>
-                    {j.title ?? j.id}
+                    {j.title ?? j.id} ({j.quantityAvailable} disponível{j.quantityAvailable === 1 ? '' : 'is'})
                   </option>
                 ))}
               </select>

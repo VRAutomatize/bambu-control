@@ -1,8 +1,10 @@
 import type { Config } from 'tailwindcss';
 
-// Identidade Bambu Control: verde (tom próximo ao "system green" da Apple,
-// sem copiar a marca oficial da Bambu Lab), visual nativo — tipografia do
-// sistema, superfícies neutras, profundidade sutil, claro/escuro automático.
+// Identidade Bambu Control: verde alinhado ao tom característico da Bambu
+// Lab (~#00AE42), aplicado com padrões de interface nativos da Apple —
+// tipografia do sistema, superfícies neutras, profundidade sutil,
+// claro/escuro automático. Não usamos o logo/wordmark oficial da Bambu Lab
+// em nenhum lugar (aviso de "não afiliado" no rodapé/Integrações).
 const config: Config = {
   darkMode: 'media',
   content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
@@ -10,16 +12,16 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          50: '#eefdf3',
-          100: '#d6fae2',
-          200: '#aef2c7',
-          300: '#78e6a4',
-          400: '#42d47a',
-          500: '#28c76a', // acento primário
-          600: '#1ba656',
-          700: '#188548',
-          800: '#17693c',
-          900: '#145733',
+          50: '#e6f9ec',
+          100: '#c3f0d1',
+          200: '#8ee0ac',
+          300: '#52cb80',
+          400: '#22b862',
+          500: '#00ae42', // acento primário — verde Bambu Lab
+          600: '#009138',
+          700: '#00752e',
+          800: '#005f26',
+          900: '#004d1f',
         },
       },
       fontFamily: {

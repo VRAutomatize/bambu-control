@@ -11,11 +11,16 @@ export async function createManualPrintJob(_prev: unknown, formData: FormData) {
   const { org } = await requireCurrentOrg();
   if (!canWrite(org.role)) return { error: 'Você não tem permissão para criar impressões.' };
 
-  // Materiais vêm como arrays paralelos (filamentId[], weightG[]).
+  // Materiais vêm como arrays paralelos (filamentId[], spoolId[], weightG[]).
   const filamentIds = formData.getAll('materialFilamentId').map(String);
+  const spoolIds = formData.getAll('materialSpoolId').map(String);
   const weights = formData.getAll('materialWeightG').map((v) => Number(v));
   const materials = filamentIds
-    .map((filamentId, i) => ({ filamentId: filamentId || null, weightG: weights[i] ?? 0 }))
+    .map((filamentId, i) => ({
+      filamentId: filamentId || null,
+      spoolId: spoolIds[i] || null,
+      weightG: weights[i] ?? 0,
+    }))
     .filter((m) => m.filamentId && m.weightG > 0);
 
   const parsed = manualPrintJobSchema.safeParse({

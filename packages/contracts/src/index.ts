@@ -65,6 +65,19 @@ export const filamentSchema = z.object({
 export type FilamentInput = z.infer<typeof filamentSchema>;
 
 // ---------------------------------------------------------------------------
+// Rolos (spools) — estoque físico de filamento
+// ---------------------------------------------------------------------------
+export const spoolSchema = z.object({
+  filamentId: uuid,
+  label: z.string().max(120).optional().nullable(),
+  supplier: z.string().max(120).optional().nullable(),
+  purchasePrice: z.coerce.number().min(0).default(0),
+  initialNetWeightG: z.coerce.number().positive().default(1000),
+  lotNumber: z.string().max(80).optional().nullable(),
+});
+export type SpoolInput = z.infer<typeof spoolSchema>;
+
+// ---------------------------------------------------------------------------
 // Perfil de custo de máquina
 // ---------------------------------------------------------------------------
 export const machineCostProfileSchema = z

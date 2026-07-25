@@ -1,13 +1,33 @@
 'use client';
 import { useActionState, useState } from 'react';
 import { IconAlertTriangle, IconPlus } from '@/components/icons';
+import { formatMoney } from '@/lib/format';
 import { createOrder } from '../actions';
 
 type State = { error?: string } | undefined;
+type PrintJobOption = { id: string; label: string; quantityProduced: number; cost: number };
 
-export function OrderForm({ customers }: { customers: { id: string; label: string }[] }) {
+export function OrderForm({
+  customers,
+  availableJobs,
+  currency,
+}: {
+  customers: { id: string; label: string }[];
+  availableJobs: PrintJobOption[];
+  currency: string;
+}) {
   const [state, action, pending] = useActionState<State, FormData>(createOrder, undefined);
   const [rows, setRows] = useState([0]);
+  const [selectedJobs, setSelectedJobs] = useState<Set<string>>(new Set());
+
+  const toggleJob = (id: string) => {
+    setSelectedJobs((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   return (
     <form action={action} className="space-y-7">
@@ -32,6 +52,43 @@ export function OrderForm({ customers }: { customers: { id: string; label: strin
           </select>
         </div>
       </div>
+
+      {availableJobs.length > 0 && (
+        <div>
+          <div className="mb-3 flex items-baseline justify-between">
+            <h3 className="text-[13px] font-semibold text-neutral-700 dark:text-neutral-200">
+              Impressões a vincular a este pedido
+            </h3>
+            <p className="text-[11.5px] text-neutral-400 dark:text-neutral-500">
+              {selectedJobs.size} selecionada{selectedJobs.size === 1 ? '' : 's'}
+            </p>
+          </div>
+          <div className="max-h-64 space-y-1 overflow-y-auto rounded-2xl border border-black/[0.06] bg-black/[0.015] p-2 dark:border-white/[0.07] dark:bg-white/[0.02]">
+            {availableJobs.map((job) => (
+              <label
+                key={job.id}
+                className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+              >
+                <input
+                  type="checkbox"
+                  name="printJobIds"
+                  value={job.id}
+                  checked={selectedJobs.has(job.id)}
+                  onChange={() => toggleJob(job.id)}
+                  className="h-4 w-4 rounded border-neutral-300 text-brand-600 focus:ring-brand-500"
+                />
+                <span className="flex-1 text-neutral-800 dark:text-neutral-200">{job.label}</span>
+                <span className="text-neutral-400">qtd {job.quantityProduced}</span>
+                <span className="tabular-nums text-neutral-500">custo {formatMoney(job.cost, currency)}</span>
+              </label>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-neutral-400 dark:text-neutral-500">
+            As impressões marcadas serão vinculadas ao primeiro item do pedido abaixo — assim o sistema calcula o
+            lucro real com base no custo dessas peças.
+          </p>
+        </div>
+      )}
 
       <div>
         <h3 className="mb-3 text-[13px] font-semibold text-neutral-700 dark:text-neutral-200">

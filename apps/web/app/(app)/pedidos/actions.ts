@@ -2,6 +2,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { paymentSchema } from '@bambu/contracts';
+import { Dec } from '@bambu/domain';
 import { requireCurrentOrg, canWrite } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 
@@ -28,10 +29,12 @@ export async function createOrder(_prev: unknown, formData: FormData) {
 
   if (items.length === 0) return { error: 'Adicione ao menos um item.' };
 
-  const subtotal = items.reduce((acc, it) => acc + it.quantity * it.unitPrice, 0);
-  const discount = Number(formData.get('discount')) || 0;
-  const shipping = Number(formData.get('shippingAmount')) || 0;
-  const total = Math.max(subtotal - discount + shipping, 0);
+  const itemTotals = items.map((it) => Dec.from(it.quantity).mul(it.unitPrice));
+  const subtotal = itemTotals.reduce((acc, t) => acc.add(t), Dec.ZERO);
+  const discount = Dec.from(Number(formData.get('discount')) || 0);
+  const shipping = Dec.from(Number(formData.get('shippingAmount')) || 0);
+  const totalRaw = subtotal.sub(discount).add(shipping);
+  const total = totalRaw.isNegative() ? Dec.ZERO : totalRaw;
 
   const supabase = await createClient();
   const { data: order, error } = await supabase
@@ -42,24 +45,46 @@ export async function createOrder(_prev: unknown, formData: FormData) {
       order_number: orderNumber,
       status: 'approved',
       ordered_at: new Date().toISOString(),
-      subtotal: round(subtotal),
-      discount: round(discount),
-      shipping_amount: round(shipping),
-      total_charged: round(total),
+      subtotal: subtotal.toNumber(),
+      discount: discount.toNumber(),
+      shipping_amount: shipping.toNumber(),
+      total_charged: total.toNumber(),
     })
     .select('id')
     .single();
   if (error || !order) return { error: `Falha: ${error?.message}` };
 
-  for (const it of items) {
-    await supabase.from('order_items').insert({
-      organization_id: org.organizationId,
-      order_id: order.id,
-      description: it.description,
-      quantity: it.quantity,
-      unit_price: round(it.unitPrice),
-      total_price: round(it.quantity * it.unitPrice),
-    });
+  let firstItemId: string | null = null;
+  for (const [i, it] of items.entries()) {
+    const { data: insertedItem } = await supabase
+      .from('order_items')
+      .insert({
+        organization_id: org.organizationId,
+        order_id: order.id,
+        description: it.description,
+        quantity: it.quantity,
+        unit_price: Dec.from(it.unitPrice).toNumber(),
+        total_price: itemTotals[i]!.toNumber(),
+      })
+      .select('id')
+      .single();
+    if (i === 0) firstItemId = insertedItem?.id ?? null;
+  }
+
+  // Vincula as impressões selecionadas no wizard ao primeiro item — permite
+  // "vender" várias peças já produzidas de uma vez, sem N submits manuais.
+  const printJobIds = formData.getAll('printJobIds').map(String).filter(Boolean);
+  if (printJobIds.length > 0 && firstItemId) {
+    for (const printJobId of printJobIds) {
+      const available = await getAvailableQuantity(supabase, org.organizationId, printJobId);
+      if (available < 1) continue; // já vendida em outro pedido nesse meio-tempo — pula silenciosamente
+      await supabase.from('order_item_print_jobs').insert({
+        organization_id: org.organizationId,
+        order_item_id: firstItemId,
+        print_job_id: printJobId,
+        allocated_quantity: 1,
+      });
+    }
   }
 
   revalidatePath('/pedidos');
@@ -78,10 +103,27 @@ export async function addPayment(orderId: string, _prev: unknown, formData: Form
   if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? 'Valor inválido.' };
 
   const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from('orders')
+    .select('total_charged, total_paid')
+    .eq('id', orderId)
+    .eq('organization_id', org.organizationId)
+    .single();
+  if (!existing) return { error: 'Pedido não encontrado.' };
+
+  const remaining = Dec.from(existing.total_charged).sub(existing.total_paid);
+  const amount = Dec.from(parsed.data.amount);
+  if (amount.toNumber() > remaining.toNumber()) {
+    return {
+      error: `Valor excede o saldo em aberto (R$ ${remaining.toFixed(2)}).`,
+    };
+  }
+
   const { error } = await supabase.from('payments').insert({
     organization_id: org.organizationId,
     order_id: orderId,
-    amount: round(parsed.data.amount),
+    amount: amount.toNumber(),
     payment_method: parsed.data.paymentMethod,
     paid_at: parsed.data.paidAt,
     status: 'confirmed',
@@ -103,6 +145,17 @@ export async function associatePrintJob(orderId: string, _prev: unknown, formDat
   if (!orderItemId || !printJobId) return { error: 'Selecione item e impressão.' };
 
   const supabase = await createClient();
+
+  const available = await getAvailableQuantity(supabase, org.organizationId, printJobId);
+  if (allocatedQuantity > available) {
+    return {
+      error:
+        available <= 0
+          ? 'Esta impressão já está totalmente vinculada a outro(s) pedido(s).'
+          : `Apenas ${available} unidade(s) disponível(is) para vincular.`,
+    };
+  }
+
   const { error } = await supabase.from('order_item_print_jobs').insert({
     organization_id: org.organizationId,
     order_item_id: orderItemId,
@@ -112,6 +165,30 @@ export async function associatePrintJob(orderId: string, _prev: unknown, formDat
   if (error) return { error: error.message };
   revalidatePath(`/pedidos/${orderId}`);
   return { ok: 'Impressão associada.' };
+}
+
+/** Unidades de uma impressão ainda não alocadas a nenhum item de pedido. */
+async function getAvailableQuantity(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  orgId: string,
+  printJobId: string,
+): Promise<number> {
+  const [jobRes, allocRes] = await Promise.all([
+    supabase
+      .from('print_jobs')
+      .select('quantity_produced')
+      .eq('id', printJobId)
+      .eq('organization_id', orgId)
+      .single(),
+    supabase
+      .from('order_item_print_jobs')
+      .select('allocated_quantity')
+      .eq('organization_id', orgId)
+      .eq('print_job_id', printJobId),
+  ]);
+  const produced = Number(jobRes.data?.quantity_produced) || 0;
+  const allocated = (allocRes.data ?? []).reduce((acc, a) => acc + (Number(a.allocated_quantity) || 0), 0);
+  return Math.max(produced - allocated, 0);
 }
 
 async function recomputeOrderPaid(
@@ -125,10 +202,10 @@ async function recomputeOrderPaid(
     .eq('order_id', orderId);
   const paid = (payments ?? [])
     .filter((p) => p.status === 'confirmed')
-    .reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
-  await supabase.from('orders').update({ total_paid: round(paid) }).eq('id', orderId).eq('organization_id', orgId);
-}
-
-function round(n: number): number {
-  return Math.round(n * 10000) / 10000;
+    .reduce((acc, p) => acc.add(p.amount ?? 0), Dec.ZERO);
+  await supabase
+    .from('orders')
+    .update({ total_paid: paid.toNumber() })
+    .eq('id', orderId)
+    .eq('organization_id', orgId);
 }

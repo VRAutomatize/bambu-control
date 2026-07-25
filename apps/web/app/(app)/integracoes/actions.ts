@@ -6,9 +6,11 @@ import { syncConnection } from '@/lib/services/sync';
 
 /**
  * Conecta a Bambu Cloud. Em modo demo (BAMBU_LIVE_ENABLED != true) cria uma
- * conexão simulada já "connected". Em modo live, o back-end autenticaria e
- * guardaria o token CRIPTOGRAFADO (a senha nunca é persistida) — ver
- * docs/security.md e docs/architecture/provider-integration.md.
+ * conexão simulada já "connected". Em modo live, a conexão fica
+ * "pending_verification" e a verificação do código SEMPRE falha hoje (ver
+ * verifyBambuCode) — a Bambu Lab não tem API pública documentada e a
+ * autenticação real contra a nuvem ainda não foi implementada/validada.
+ * Ver docs/security.md e docs/architecture/provider-integration.md.
  */
 export async function connectBambu(_prev: unknown, formData: FormData) {
   const { org } = await requireCurrentOrg();
@@ -73,21 +75,35 @@ export async function verifyBambuCode(_prev: unknown, formData: FormData) {
   }
 
   const supabase = await createClient();
-
-  // In live mode, would call Bambu API to verify the code
-  // For now, demo mode just marks as connected
   const live = process.env.BAMBU_LIVE_ENABLED === 'true';
 
   if (live) {
-    // TODO: Call Bambu API with code to verify and get token
-    // const bambuResult = await verifyBambuAuthCode(code);
-    // if (!bambuResult.success) {
-    //   return { error: 'Código inválido. Verifique e tente novamente.' };
-    // }
-    // encrypted_credentials would be set here with bambuResult.token encrypted
+    // A Bambu Lab não tem API pública documentada; a verificação real do
+    // código de autenticação contra a nuvem ainda não está implementada
+    // (packages/providers/src/bambu-cloud.ts é engenharia reversa não
+    // validada). Marcar como "connected" aqui sem checar nada seria
+    // enganoso — o usuário acharia que sincroniza dados reais quando na
+    // prática o sync cairia de volta no provider mock. Falha de forma
+    // explícita até essa integração ser implementada e validada.
+    await supabase
+      .from('provider_connections')
+      .update({
+        status: 'error',
+        last_error_code: 'not_implemented',
+        last_error_message:
+          'Verificação real da Bambu Cloud ainda não está disponível nesta versão. Use o modo demo por enquanto.',
+      })
+      .eq('id', connectionId)
+      .eq('organization_id', org.organizationId);
+    revalidatePath('/integracoes');
+    return {
+      error:
+        'A conexão real com a Bambu Cloud ainda não está disponível. Estamos trabalhando nisso — por enquanto, use o modo demo.',
+    };
   }
 
-  // Mark connection as connected
+  // Modo demo: aceita qualquer código de 6 caracteres e marca como conectado
+  // (não há credenciais reais envolvidas).
   const { error } = await supabase
     .from('provider_connections')
     .update({
@@ -101,7 +117,7 @@ export async function verifyBambuCode(_prev: unknown, formData: FormData) {
   if (error) return { error: error.message };
 
   revalidatePath('/integracoes');
-  return { ok: 'Conexão verificada com sucesso!' };
+  return { ok: 'Conexão verificada com sucesso! (modo demo)' };
 }
 
 /** Reenviar código (stub para demo). */
