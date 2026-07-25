@@ -75,37 +75,41 @@ export default async function FilamentosPage() {
               <EmptyState title="Nenhum filamento" description="Cadastre seu primeiro material ao lado." />
             ) : (
               <Card className="overflow-hidden p-0">
-                <table className="w-full">
-                  <thead className="table-head">
-                    <tr>
-                      <th className="table-cell-head">Nome</th>
-                      <th className="table-cell-head">Material</th>
-                      <th className="table-cell-head">Cor</th>
-                      <th className="table-cell-head">Preço/kg</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filaments.map((f) => (
-                      <tr key={f.id} className="table-row">
-                        <td className="table-cell font-medium text-neutral-900 dark:text-neutral-100">
-                          {f.brand ? `${f.brand} — ` : ''}
-                          {f.name}
-                        </td>
-                        <td className="table-cell">{f.material ?? '—'}</td>
-                        <td className="table-cell">
-                          <span className="inline-flex items-center gap-2">
-                            <span
-                              className="inline-block h-3 w-3 rounded-full ring-1 ring-black/10 dark:ring-white/20"
-                              style={{ backgroundColor: f.color_hex ?? '#ccc' }}
-                            />
-                            {f.color_name ?? '—'}
-                          </span>
-                        </td>
-                        <td className="table-cell tabular-nums">{formatMoney(f.default_price_per_kg, org.currency)}</td>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="table-head">
+                      <tr>
+                        <th className="table-cell-head">Nome</th>
+                        <th className="table-cell-head">Material</th>
+                        <th className="table-cell-head">Cor</th>
+                        <th className="table-cell-head">Preço/kg</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {filaments.map((f) => (
+                        <tr key={f.id} className="table-row">
+                          <td className="table-cell font-medium text-neutral-900 dark:text-neutral-100">
+                            {f.brand ? `${f.brand} — ` : ''}
+                            {f.name}
+                          </td>
+                          <td className="table-cell">{f.material ?? '—'}</td>
+                          <td className="table-cell">
+                            <span className="inline-flex items-center gap-2">
+                              <span
+                                className="inline-block h-3 w-3 rounded-full ring-1 ring-black/10 dark:ring-white/20"
+                                style={{ backgroundColor: f.color_hex ?? '#ccc' }}
+                              />
+                              {f.color_name ?? '—'}
+                            </span>
+                          </td>
+                          <td className="table-cell tabular-nums">
+                            {formatMoney(f.default_price_per_kg, org.currency)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </Card>
             )}
           </div>
@@ -121,43 +125,47 @@ export default async function FilamentosPage() {
               />
             ) : (
               <Card className="overflow-hidden p-0">
-                <table className="w-full">
-                  <thead className="table-head">
-                    <tr>
-                      <th className="table-cell-head">Filamento</th>
-                      <th className="table-cell-head">Rótulo</th>
-                      <th className="table-cell-head">Restante</th>
-                      <th className="table-cell-head">Status</th>
-                      <th className="table-cell-head" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {spools.map((s) => {
-                      const filament = filamentById.get(s.filament_id);
-                      const pct = Math.round((Number(s.remaining_weight_g) / Number(s.initial_net_weight_g)) * 100);
-                      return (
-                        <tr key={s.id} className="table-row">
-                          <td className="table-cell font-medium text-neutral-900 dark:text-neutral-100">
-                            {filament?.name ?? '—'}
-                          </td>
-                          <td className="table-cell">{s.label ?? '—'}</td>
-                          <td className="table-cell tabular-nums">
-                            {formatWeight(s.remaining_weight_g)} / {formatWeight(s.initial_net_weight_g)}
-                            <span className="ml-1.5 text-[11px] text-neutral-400">({pct}%)</span>
-                          </td>
-                          <td className="table-cell">
-                            <span className={`badge ${SPOOL_STATUS_STYLES[s.status] ?? ''}`}>
-                              {SPOOL_STATUS_LABELS[s.status] ?? s.status}
-                            </span>
-                          </td>
-                          <td className="table-cell text-right">
-                            <ArchiveSpoolButton spoolId={s.id} />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="table-head">
+                      <tr>
+                        <th className="table-cell-head">Filamento</th>
+                        <th className="table-cell-head">Rótulo</th>
+                        <th className="table-cell-head">Restante</th>
+                        <th className="table-cell-head">Status</th>
+                        <th className="table-cell-head" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {spools.map((s) => {
+                        const filament = filamentById.get(s.filament_id);
+                        const pct = Math.round(
+                          (Number(s.remaining_weight_g) / Number(s.initial_net_weight_g)) * 100,
+                        );
+                        return (
+                          <tr key={s.id} className="table-row">
+                            <td className="table-cell font-medium text-neutral-900 dark:text-neutral-100">
+                              {filament?.name ?? '—'}
+                            </td>
+                            <td className="table-cell">{s.label ?? '—'}</td>
+                            <td className="table-cell tabular-nums">
+                              {formatWeight(s.remaining_weight_g)} / {formatWeight(s.initial_net_weight_g)}
+                              <span className="ml-1.5 text-[11px] text-neutral-400">({pct}%)</span>
+                            </td>
+                            <td className="table-cell">
+                              <span className={`badge ${SPOOL_STATUS_STYLES[s.status] ?? ''}`}>
+                                {SPOOL_STATUS_LABELS[s.status] ?? s.status}
+                              </span>
+                            </td>
+                            <td className="table-cell text-right">
+                              <ArchiveSpoolButton spoolId={s.id} />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </Card>
             )}
           </div>

@@ -145,9 +145,16 @@ export function ImportCsvForm({ filamentNames }: { filamentNames: string[] }) {
           </div>
         )}
 
-        <button type="submit" className="btn-primary px-5 py-2.5" disabled={pending || !csvText.trim()}>
-          {pending ? 'Importando…' : 'Importar'}
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button type="submit" className="btn-primary px-5 py-2.5" disabled={pending || !csvText.trim()}>
+            {pending ? 'Importando…' : 'Importar'}
+          </button>
+          {!csvText.trim() && !pending && (
+            <span className="text-[11.5px] text-neutral-400 dark:text-neutral-500">
+              Envie um arquivo ou cole o conteúdo do CSV para habilitar
+            </span>
+          )}
+        </div>
       </form>
     </div>
   );

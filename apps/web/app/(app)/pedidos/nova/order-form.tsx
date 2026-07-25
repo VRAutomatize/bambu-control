@@ -5,7 +5,7 @@ import { formatMoney } from '@/lib/format';
 import { createOrder } from '../actions';
 
 type State = { error?: string } | undefined;
-type PrintJobOption = { id: string; label: string; quantityProduced: number; cost: number };
+type PrintJobOption = { id: string; label: string; quantityAvailable: number; cost: number };
 
 export function OrderForm({
   customers,
@@ -78,7 +78,9 @@ export function OrderForm({
                   className="h-4 w-4 rounded border-neutral-300 text-brand-600 focus:ring-brand-500"
                 />
                 <span className="flex-1 text-neutral-800 dark:text-neutral-200">{job.label}</span>
-                <span className="text-neutral-400">qtd {job.quantityProduced}</span>
+                <span className="text-neutral-400">
+                  {job.quantityAvailable} {job.quantityAvailable === 1 ? 'disponível' : 'disponíveis'}
+                </span>
                 <span className="tabular-nums text-neutral-500">custo {formatMoney(job.cost, currency)}</span>
               </label>
             ))}
@@ -96,7 +98,7 @@ export function OrderForm({
         </h3>
         <div className="space-y-2 rounded-2xl border border-black/[0.06] bg-black/[0.015] p-3 dark:border-white/[0.07] dark:bg-white/[0.02]">
           {rows.map((row, idx) => (
-            <div key={row} className="grid grid-cols-[1fr,90px,120px,auto] gap-2">
+            <div key={row} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr,90px,120px,auto]">
               <input name="itemDescription" className="input" placeholder="Descrição" />
               <input name="itemQuantity" type="number" min="1" step="1" defaultValue="1" className="input" placeholder="Qtd" />
               <input name="itemUnitPrice" type="number" min="0" step="0.01" className="input" placeholder="Preço un." />

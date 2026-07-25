@@ -97,6 +97,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
       <div className="mt-8 grid gap-5 lg:grid-cols-2">
         <Card>
           <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Itens</h2>
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="table-head">
               <tr>
@@ -122,6 +123,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
               })}
             </tbody>
           </table>
+          </div>
 
           <div className="mt-5 border-t border-black/[0.06] pt-5 dark:border-white/[0.08]">
             <h3 className="mb-2.5 text-[13px] font-semibold text-neutral-700 dark:text-neutral-200">

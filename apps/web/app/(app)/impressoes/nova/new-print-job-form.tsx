@@ -106,7 +106,7 @@ export function NewPrintJobForm({
               ? spools.filter((s) => s.filamentId === selectedFilament)
               : [];
             return (
-              <div key={row} className="grid grid-cols-[1fr,1fr,110px,auto] gap-2">
+              <div key={row} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr,1fr,110px,auto]">
                 <select
                   name="materialFilamentId"
                   className="input"

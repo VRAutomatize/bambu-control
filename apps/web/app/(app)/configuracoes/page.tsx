@@ -27,7 +27,9 @@ export default async function ConfiguracoesPage() {
     .from('organization_invites')
     .select('id, email, role, expires_at, accepted_at')
     .eq('organization_id', org.organizationId)
+    .is('accepted_at', null)
     .order('created_at', { ascending: false });
+  const now = Date.now();
 
   const memberships = await listMemberships();
   const canInvite = isAdmin(org.role);
@@ -62,26 +64,28 @@ export default async function ConfiguracoesPage() {
           <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Membros</h2>
           {(members ?? []).length > 0 && (
             <>
-              <table className="w-full">
-                <thead className="table-head">
-                  <tr>
-                    <th className="py-2 text-left">Usuário</th>
-                    <th className="py-2 text-left">Papel</th>
-                    <th className="py-2 text-left">Desde</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(members ?? []).map((m) => (
-                    <tr key={m.user_id} className="hairline">
-                      <td className="py-2 font-mono text-[12px] text-neutral-500">{m.user_id.slice(0, 8)}…</td>
-                      <td className="py-2 text-[13.5px]">{ROLE_LABELS[m.role] ?? m.role}</td>
-                      <td className="py-2 text-[13.5px] text-neutral-500">
-                        {formatDateTime(m.created_at, org.timezone)}
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="table-head">
+                    <tr>
+                      <th className="py-2 text-left">Usuário</th>
+                      <th className="py-2 text-left">Papel</th>
+                      <th className="py-2 text-left">Desde</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {(members ?? []).map((m) => (
+                      <tr key={m.user_id} className="hairline">
+                        <td className="py-2 font-mono text-[12px] text-neutral-500">{m.user_id.slice(0, 8)}…</td>
+                        <td className="py-2 text-[13.5px]">{ROLE_LABELS[m.role] ?? m.role}</td>
+                        <td className="py-2 text-[13.5px] text-neutral-500">
+                          {formatDateTime(m.created_at, org.timezone)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               {(invites?.length ?? 0) > 0 && <div className="mt-4 border-t border-neutral-200 dark:border-white/[0.08]" />}
             </>
           )}
@@ -89,19 +93,29 @@ export default async function ConfiguracoesPage() {
             <div className="mt-4">
               <h3 className="mb-3 text-[13px] font-medium text-neutral-600 dark:text-neutral-400">Convites pendentes</h3>
               <div className="space-y-2">
-                {invites?.map((invite) => (
-                  <div key={invite.id} className="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2.5 dark:bg-amber-500/10">
-                    <div>
-                      <p className="text-[13px] font-medium text-neutral-900 dark:text-neutral-100">{invite.email}</p>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                        {ROLE_LABELS[invite.role] ?? invite.role} · Expira {formatDateTime(invite.expires_at, org.timezone)}
-                      </p>
+                {invites?.map((invite) => {
+                  const expired = new Date(invite.expires_at).getTime() < now;
+                  return (
+                    <div
+                      key={invite.id}
+                      className={`flex items-center justify-between rounded-lg px-3 py-2.5 ${
+                        expired
+                          ? 'bg-neutral-100 dark:bg-white/[0.04]'
+                          : 'bg-amber-50 dark:bg-amber-500/10'
+                      }`}
+                    >
+                      <div>
+                        <p className="text-[13px] font-medium text-neutral-900 dark:text-neutral-100">
+                          {invite.email}
+                        </p>
+                        <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                          {ROLE_LABELS[invite.role] ?? invite.role} ·{' '}
+                          {expired ? 'Expirado' : `Expira ${formatDateTime(invite.expires_at, org.timezone)}`}
+                        </p>
+                      </div>
                     </div>
-                    {invite.accepted_at && (
-                      <span className="text-[11px] font-medium text-green-600 dark:text-green-400">Aceito</span>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

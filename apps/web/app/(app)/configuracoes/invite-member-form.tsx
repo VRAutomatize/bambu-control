@@ -42,11 +42,11 @@ export function InviteMemberForm() {
       )}
 
       {state?.ok && (
-        <div className="flex items-start gap-2.5 rounded-lg bg-green-50 px-3 py-2.5 dark:bg-green-500/15">
-          <IconCheckCircle width={16} height={16} className="mt-0.5 flex-shrink-0 text-green-600 dark:text-green-400" />
+        <div className="flex items-start gap-2.5 rounded-lg bg-brand-50 px-3 py-2.5 dark:bg-brand-500/15">
+          <IconCheckCircle width={16} height={16} className="mt-0.5 flex-shrink-0 text-brand-700 dark:text-brand-400" />
           <div>
-            <p className="text-[12px] font-medium text-green-600 dark:text-green-400">{state.message}</p>
-            <p className="mt-0.5 text-[11px] text-green-600/75 dark:text-green-400/75">
+            <p className="text-[12px] font-medium text-brand-700 dark:text-brand-400">{state.message}</p>
+            <p className="mt-0.5 text-[11px] text-brand-700/75 dark:text-brand-400/75">
               {process.env.NODE_ENV === 'development'
                 ? 'Link de aceitação disponível no console do navegador'
                 : 'Um email com instruções foi enviado'}

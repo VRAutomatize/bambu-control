@@ -42,7 +42,6 @@ export default async function NovoPedidoPage() {
     .map((j) => ({
       id: j.id,
       label: j.title ?? 'Sem título',
-      quantityProduced: j.quantity_produced,
       quantityAvailable: Math.max(j.quantity_produced - (allocatedByJob.get(j.id) ?? 0), 0),
       cost: costByJob.get(j.id) ?? 0,
     }))

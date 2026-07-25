@@ -4,29 +4,75 @@ import { syncNow, disconnect, verifyBambuCode, resendBambuCode } from './actions
 
 export function SyncButton({ connectionId }: { connectionId: string }) {
   const [pending, start] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   return (
-    <button
-      className="btn-primary text-xs"
-      disabled={pending}
-      onClick={() => start(() => syncNow(connectionId))}
-    >
-      {pending ? 'Sincronizando…' : 'Sincronizar agora'}
-    </button>
+    <span className="inline-flex items-center gap-2">
+      {error && <span className="text-[11px] text-red-600 dark:text-red-400">{error}</span>}
+      <button
+        className="btn-primary text-xs"
+        disabled={pending}
+        onClick={() => {
+          setError(null);
+          start(async () => {
+            try {
+              await syncNow(connectionId);
+            } catch {
+              setError('Falha ao sincronizar.');
+            }
+          });
+        }}
+      >
+        {pending ? 'Sincronizando…' : 'Sincronizar agora'}
+      </button>
+    </span>
   );
 }
 
 export function DisconnectButton({ connectionId }: { connectionId: string }) {
   const [pending, start] = useTransition();
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (confirming) {
+    return (
+      <span className="inline-flex items-center gap-2 text-xs">
+        <span className="text-neutral-500 dark:text-neutral-400">Desconectar e apagar credenciais?</span>
+        <button
+          className="font-medium text-red-600 hover:text-red-700 dark:text-red-400"
+          disabled={pending}
+          onClick={() => {
+            setError(null);
+            start(async () => {
+              try {
+                await disconnect(connectionId);
+              } catch {
+                setError('Falha ao desconectar.');
+              } finally {
+                setConfirming(false);
+              }
+            });
+          }}
+        >
+          {pending ? 'Desconectando…' : 'Sim, desconectar'}
+        </button>
+        <button
+          className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+          disabled={pending}
+          onClick={() => setConfirming(false)}
+        >
+          Cancelar
+        </button>
+      </span>
+    );
+  }
+
   return (
-    <button
-      className="btn-secondary text-xs"
-      disabled={pending}
-      onClick={() => {
-        if (confirm('Desconectar e apagar credenciais?')) start(() => disconnect(connectionId));
-      }}
-    >
-      Desconectar
-    </button>
+    <span className="inline-flex items-center gap-2">
+      {error && <span className="text-[11px] text-red-600 dark:text-red-400">{error}</span>}
+      <button className="btn-secondary text-xs" onClick={() => setConfirming(true)}>
+        Desconectar
+      </button>
+    </span>
   );
 }
 
@@ -113,7 +159,8 @@ export function VerifyCodeButton({ connectionId }: { connectionId: string }) {
     <form onSubmit={handleSubmit} className="space-y-3">
       <input
         type="text"
-        placeholder="000000"
+        placeholder="Ex.: A1B2C3"
+        aria-label="Código de verificação de 6 caracteres"
         value={code}
         onChange={(e) => {
           const val = e.target.value.toUpperCase();

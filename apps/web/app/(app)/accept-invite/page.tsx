@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { Card } from '@/components/ui';
-import { IconAlertTriangle, IconCheckCircle } from '@/components/icons';
+import { IconAlertTriangle } from '@/components/icons';
 import { AcceptInviteForm } from './accept-invite-form';
 
 export const dynamic = 'force-dynamic';
@@ -48,31 +48,10 @@ export default async function AcceptInvitePage({
 
     const result = data?.[0];
 
-    // Success case
+    // Success case — redireciona direto (não precisa de clique extra; era um
+    // <button onClick> num Server Component, que quebra em produção).
     if (result?.success && result.organization_id) {
-      return (
-        <div className="flex h-screen items-center justify-center bg-neutral-50 dark:bg-neutral-950">
-          <Card className="max-w-md">
-            <div className="text-center">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-600 dark:bg-green-500/15 mx-auto mb-3">
-                <IconCheckCircle width={20} height={20} />
-              </div>
-              <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                Convite aceito com sucesso!
-              </h2>
-              <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                Você foi adicionado à organização.
-              </p>
-              <button
-                onClick={() => redirect('/dashboard')}
-                className="mt-4 inline-block text-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
-              >
-                Ir para o dashboard
-              </button>
-            </div>
-          </Card>
-        </div>
-      );
+      redirect('/dashboard');
     }
 
     // Error case: invalid or expired
