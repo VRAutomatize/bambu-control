@@ -12,6 +12,54 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
   return <div className={`card ${className}`}>{children}</div>;
 }
 
+/** Bloco cinza pulsante — base para skeletons de loading.tsx. */
+export function Skeleton({ className = '' }: { className?: string }) {
+  return <div className={`animate-pulse rounded-md bg-neutral-200/70 dark:bg-white/[0.06] ${className}`} />;
+}
+
+/** Skeleton de página padrão: título + N cards (grid) ou 1 tabela. Cobre a
+ * maioria das telas do app sem precisar desenhar um skeleton por rota. */
+export function SkeletonPage({
+  cards = 3,
+  table = false,
+}: {
+  cards?: number;
+  table?: boolean;
+}) {
+  return (
+    <div>
+      <div className="mb-8">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="mt-2 h-4 w-72" />
+      </div>
+      {table ? (
+        <Card className="overflow-hidden p-0">
+          <div className="space-y-0">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 border-b border-black/[0.04] px-4 py-3.5 last:border-0 dark:border-white/[0.05]">
+                <Skeleton className="h-4 w-1/4" />
+                <Skeleton className="h-4 w-1/6" />
+                <Skeleton className="h-4 w-1/6" />
+                <Skeleton className="h-4 w-1/6" />
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : (
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: cards }).map((_, i) => (
+            <Card key={i}>
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="mt-3 h-7 w-32" />
+              <Skeleton className="mt-2 h-3 w-20" />
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function PageHeader({
   title,
   subtitle,
