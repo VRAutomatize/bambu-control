@@ -192,8 +192,16 @@ export default async function IntegracoesPage() {
                   <>
                     <input name="account" className="input" placeholder="E-mail da conta Bambu" required />
                     <input name="password" type="password" className="input" placeholder="Senha" required />
+                    <select name="region" className="input" defaultValue="global">
+                      <option value="global">Conta global (bambulab.com)</option>
+                      <option value="china">Conta China (bambulab.cn)</option>
+                    </select>
                     <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                      <strong>Segurança:</strong> A senha é descartada após autenticação. Guardamos somente o token criptografado.
+                      <strong>Segurança:</strong> A senha é descartada após autenticação. Guardamos somente o token
+                      criptografado.
+                    </p>
+                    <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                      A Bambu Lab não tem API pública — esta conexão pode falhar ou parar de funcionar sem aviso.
                     </p>
                   </>
                 )}

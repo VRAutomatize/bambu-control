@@ -4,6 +4,7 @@ export * from './sync-engine.js';
 export * from './manual.js';
 export * from './bambu-mock.js';
 export * from './bambu-cloud.js';
+export * from './bambu-auth.js';
 
 import { BambuMockProvider } from './bambu-mock.js';
 import { ManualProvider } from './manual.js';

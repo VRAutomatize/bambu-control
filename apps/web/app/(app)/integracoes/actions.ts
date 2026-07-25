@@ -3,14 +3,21 @@ import { revalidatePath } from 'next/cache';
 import { requireCurrentOrg, isAdmin } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { syncConnection } from '@/lib/services/sync';
+import { login, verifyLoginCode, sealToken, openToken, ProviderError, type BambuRegion } from '@bambu/providers';
+
+function encryptionKey(): string {
+  const key = process.env.CREDENTIALS_ENCRYPTION_KEY;
+  if (!key) throw new Error('CREDENTIALS_ENCRYPTION_KEY não configurada.');
+  return key;
+}
 
 /**
  * Conecta a Bambu Cloud. Em modo demo (BAMBU_LIVE_ENABLED != true) cria uma
- * conexão simulada já "connected". Em modo live, a conexão fica
- * "pending_verification" e a verificação do código SEMPRE falha hoje (ver
- * verifyBambuCode) — a Bambu Lab não tem API pública documentada e a
- * autenticação real contra a nuvem ainda não foi implementada/validada.
- * Ver docs/security.md e docs/architecture/provider-integration.md.
+ * conexão simulada já "connected". Em modo live, faz login de verdade contra
+ * a Bambu Cloud (login + verificação por e-mail) — ver
+ * packages/providers/src/bambu-auth.ts. A API não é oficial/documentada:
+ * pode falhar, mudar de formato ou ser bloqueada pela Bambu sem aviso.
+ * A senha NUNCA é persistida — só o token retornado, criptografado.
  */
 export async function connectBambu(_prev: unknown, formData: FormData) {
   const { org } = await requireCurrentOrg();
@@ -18,20 +25,75 @@ export async function connectBambu(_prev: unknown, formData: FormData) {
 
   const displayName = String(formData.get('displayName') ?? 'Bambu Cloud').trim();
   const supabase = await createClient();
-
   const live = process.env.BAMBU_LIVE_ENABLED === 'true';
-  const { error } = await supabase.from('provider_connections').insert({
-    organization_id: org.organizationId,
-    provider: 'bambu_cloud',
-    display_name: displayName,
-    status: live ? 'pending_verification' : 'connected',
-    // Em demo não há credenciais reais. Em live, encrypted_credentials seria
-    // preenchido pelo fluxo de autenticação/verificação server-side.
-    encrypted_credentials: null,
-  });
-  if (error) return { error: error.message };
-  revalidatePath('/integracoes');
-  return { ok: live ? 'Conexão criada. Verifique o código enviado.' : 'Conexão simulada criada (modo demo).' };
+
+  if (!live) {
+    const { error } = await supabase.from('provider_connections').insert({
+      organization_id: org.organizationId,
+      provider: 'bambu_cloud',
+      display_name: displayName,
+      status: 'connected',
+      encrypted_credentials: null,
+    });
+    if (error) return { error: error.message };
+    revalidatePath('/integracoes');
+    return { ok: 'Conexão simulada criada (modo demo).' };
+  }
+
+  const account = String(formData.get('account') ?? '').trim();
+  const password = String(formData.get('password') ?? '');
+  const region = (String(formData.get('region') ?? 'global') as BambuRegion) || 'global';
+  if (!account || !password) return { error: 'Informe e-mail e senha da conta Bambu.' };
+
+  let key: string;
+  try {
+    key = encryptionKey();
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+
+  try {
+    const result = await login(account, password, region);
+
+    if (result.needsVerification) {
+      // Guarda só account/region (não a senha) até o código chegar por e-mail.
+      const pendingEnvelope = sealToken({ account, region }, key);
+      const { error } = await supabase.from('provider_connections').insert({
+        organization_id: org.organizationId,
+        provider: 'bambu_cloud',
+        display_name: displayName,
+        status: 'pending_verification',
+        encrypted_credentials: pendingEnvelope,
+      });
+      if (error) return { error: error.message };
+      revalidatePath('/integracoes');
+      return { ok: 'Conexão criada. Digite o código enviado por e-mail para confirmar.' };
+    }
+
+    // Login direto sem verificação — já grava o token.
+    const tokenEnvelope = sealToken(
+      { account, region, accessToken: result.accessToken, refreshToken: result.refreshToken },
+      key,
+    );
+    const expiresAt = result.expiresIn ? new Date(Date.now() + result.expiresIn * 1000).toISOString() : null;
+    const { error } = await supabase.from('provider_connections').insert({
+      organization_id: org.organizationId,
+      provider: 'bambu_cloud',
+      display_name: displayName,
+      status: 'connected',
+      encrypted_credentials: tokenEnvelope,
+      token_expires_at: expiresAt,
+    });
+    if (error) return { error: error.message };
+    revalidatePath('/integracoes');
+    return { ok: 'Conectado com sucesso!' };
+  } catch (err) {
+    const message =
+      err instanceof ProviderError
+        ? err.message
+        : 'Não foi possível conectar à Bambu Cloud. Tente novamente em instantes.';
+    return { error: message };
+  }
 }
 
 /** Sincroniza agora uma conexão. */
@@ -57,7 +119,7 @@ export async function disconnect(connectionId: string) {
   revalidatePath('/integracoes');
 }
 
-/** Verifica o código de autenticação Bambu. */
+/** Verifica o código de autenticação enviado por e-mail pela Bambu Cloud. */
 export async function verifyBambuCode(_prev: unknown, formData: FormData) {
   const { org } = await requireCurrentOrg();
   if (!isAdmin(org.role)) return { error: 'Apenas owner/admin podem verificar integrações.' };
@@ -68,70 +130,118 @@ export async function verifyBambuCode(_prev: unknown, formData: FormData) {
   if (!connectionId || !code) {
     return { error: 'Código e conexão são obrigatórios.' };
   }
-
-  // Validar formato: 6 dígitos ou caracteres alfanuméricos
-  if (!/^[A-Z0-9]{6}$/.test(code)) {
-    return { error: 'Código deve ter exatamente 6 caracteres alfanuméricos.' };
+  if (!/^[A-Z0-9]{4,12}$/.test(code)) {
+    return { error: 'Código inválido — verifique o e-mail e tente novamente.' };
   }
 
   const supabase = await createClient();
   const live = process.env.BAMBU_LIVE_ENABLED === 'true';
 
-  if (live) {
-    // A Bambu Lab não tem API pública documentada; a verificação real do
-    // código de autenticação contra a nuvem ainda não está implementada
-    // (packages/providers/src/bambu-cloud.ts é engenharia reversa não
-    // validada). Marcar como "connected" aqui sem checar nada seria
-    // enganoso — o usuário acharia que sincroniza dados reais quando na
-    // prática o sync cairia de volta no provider mock. Falha de forma
-    // explícita até essa integração ser implementada e validada.
-    await supabase
+  if (!live) {
+    // Modo demo: aceita qualquer código válido e marca como conectado
+    // (não há credenciais reais envolvidas).
+    const { error } = await supabase
+      .from('provider_connections')
+      .update({ status: 'connected', last_error_message: null, last_error_code: null })
+      .eq('id', connectionId)
+      .eq('organization_id', org.organizationId);
+    if (error) return { error: error.message };
+    revalidatePath('/integracoes');
+    return { ok: 'Conexão verificada com sucesso! (modo demo)' };
+  }
+
+  let key: string;
+  try {
+    key = encryptionKey();
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+
+  const { data: conn } = await supabase
+    .from('provider_connections')
+    .select('encrypted_credentials')
+    .eq('id', connectionId)
+    .eq('organization_id', org.organizationId)
+    .single();
+  if (!conn?.encrypted_credentials) {
+    return { error: 'Conexão não encontrada ou sem dados pendentes.' };
+  }
+
+  try {
+    const pending = openToken<{ account: string; region: BambuRegion }>(conn.encrypted_credentials, key);
+    const result = await verifyLoginCode(pending.account, code, pending.region);
+
+    const tokenEnvelope = sealToken(
+      {
+        account: pending.account,
+        region: pending.region,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      },
+      key,
+    );
+    const expiresAt = result.expiresIn ? new Date(Date.now() + result.expiresIn * 1000).toISOString() : null;
+
+    const { error } = await supabase
       .from('provider_connections')
       .update({
-        status: 'error',
-        last_error_code: 'not_implemented',
-        last_error_message:
-          'Verificação real da Bambu Cloud ainda não está disponível nesta versão. Use o modo demo por enquanto.',
+        status: 'connected',
+        encrypted_credentials: tokenEnvelope,
+        token_expires_at: expiresAt,
+        last_error_message: null,
+        last_error_code: null,
       })
       .eq('id', connectionId)
       .eq('organization_id', org.organizationId);
+    if (error) return { error: error.message };
+
     revalidatePath('/integracoes');
-    return {
-      error:
-        'A conexão real com a Bambu Cloud ainda não está disponível. Estamos trabalhando nisso — por enquanto, use o modo demo.',
-    };
+    return { ok: 'Conexão verificada com sucesso!' };
+  } catch (err) {
+    const message = err instanceof ProviderError ? err.message : 'Falha ao verificar o código.';
+    await supabase
+      .from('provider_connections')
+      .update({ last_error_code: 'verification_failed', last_error_message: message })
+      .eq('id', connectionId)
+      .eq('organization_id', org.organizationId);
+    revalidatePath('/integracoes');
+    return { error: message };
   }
-
-  // Modo demo: aceita qualquer código de 6 caracteres e marca como conectado
-  // (não há credenciais reais envolvidas).
-  const { error } = await supabase
-    .from('provider_connections')
-    .update({
-      status: 'connected',
-      last_error_message: null,
-      last_error_code: null,
-    })
-    .eq('id', connectionId)
-    .eq('organization_id', org.organizationId);
-
-  if (error) return { error: error.message };
-
-  revalidatePath('/integracoes');
-  return { ok: 'Conexão verificada com sucesso! (modo demo)' };
 }
 
-/** Reenviar código (stub para demo). */
+/** Reinicia o login para reenviar o código (a Bambu Cloud não expõe um "resend" isolado). */
 export async function resendBambuCode(_prev: unknown, formData: FormData) {
   const { org } = await requireCurrentOrg();
   if (!isAdmin(org.role)) return { error: 'Apenas owner/admin podem reenviar código.' };
 
   const connectionId = String(formData.get('connectionId') ?? '');
+  if (!connectionId) return { error: 'Conexão não encontrada.' };
 
-  if (!connectionId) {
-    return { error: 'Conexão não encontrada.' };
+  const live = process.env.BAMBU_LIVE_ENABLED === 'true';
+  if (!live) {
+    return { ok: 'Código reenviado (modo demo, não há e-mail real).' };
   }
 
-  // In live mode, would call Bambu API to resend the code
-  // For demo, just acknowledge
-  return { ok: 'Código reenviado (em demo mode, não há email real).' };
+  const supabase = await createClient();
+  let key: string;
+  try {
+    key = encryptionKey();
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+
+  const { data: conn } = await supabase
+    .from('provider_connections')
+    .select('encrypted_credentials')
+    .eq('id', connectionId)
+    .eq('organization_id', org.organizationId)
+    .single();
+  if (!conn?.encrypted_credentials) return { error: 'Conexão não encontrada.' };
+
+  // A Bambu Cloud não tem endpoint de "reenviar código" — o único jeito
+  // (documentado pela comunidade) é reiniciar o login. Sem a senha guardada
+  // (nunca persistimos), não é possível reenviar automaticamente aqui.
+  return {
+    error: 'Não é possível reenviar automaticamente. Desconecte e conecte novamente com sua senha para receber um novo código.',
+  };
 }

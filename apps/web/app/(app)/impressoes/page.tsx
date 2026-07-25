@@ -36,9 +36,14 @@ export default async function ImpressoesPage({
         title="Impressões"
         subtitle="Histórico de impressões e custos"
         action={
-          <LinkButton href="/impressoes/nova" icon="plus">
-            Nova impressão
-          </LinkButton>
+          <div className="flex gap-2">
+            <LinkButton href="/impressoes/importar" variant="secondary">
+              Importar CSV
+            </LinkButton>
+            <LinkButton href="/impressoes/nova" icon="plus">
+              Nova impressão
+            </LinkButton>
+          </div>
         }
       />
 
