@@ -13,9 +13,14 @@ create table public.organization_invites (
   token text not null unique default gen_random_uuid()::text,
   expires_at timestamptz not null,
   accepted_at timestamptz,
-  created_at timestamptz not null default now(),
-  constraint unique_pending_invite unique (organization_id, email) where accepted_at is null
+  created_at timestamptz not null default now()
 );
+
+-- Postgres não aceita "unique (...) where ..." como constraint inline —
+-- unicidade parcial só existe como índice único.
+create unique index unique_pending_invite
+  on public.organization_invites (organization_id, email)
+  where accepted_at is null;
 
 create index idx_invites_org on public.organization_invites (organization_id);
 create index idx_invites_email on public.organization_invites (email);
@@ -46,11 +51,16 @@ create policy "invites_update_deny" on public.organization_invites
 -- ---------------------------------------------------------------------------
 -- RPC: accept_organization_invite — aceita um convite via token
 -- ============================================================================
+-- NOTA: a coluna de retorno é "org_id" (não "organization_id") de propósito —
+-- um OUT parameter chamado "organization_id" colide com a coluna de mesmo
+-- nome em organization_members dentro do "on conflict (organization_id, ...)"
+-- abaixo, e o Postgres recusa a função com "column reference ... is
+-- ambiguous" (validado localmente antes de aplicar em produção).
 create or replace function public.accept_organization_invite(p_token text)
 returns table (
   success boolean,
   message text,
-  organization_id uuid
+  org_id uuid
 )
 language plpgsql
 security definer

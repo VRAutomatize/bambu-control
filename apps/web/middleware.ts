@@ -6,7 +6,10 @@ import type { Database } from '@bambu/db';
  * Middleware: renova a sessão do Supabase e protege as rotas do app.
  * Usuários não autenticados são redirecionados para /login.
  */
-const PUBLIC_PATHS = ['/login', '/cadastro', '/recuperar-senha', '/auth'];
+// /accept-invite trata autenticação por conta própria (mostra prompt de
+// login preservando o ?code= em vez de o middleware redirecionar cedo
+// demais e perder o parâmetro).
+const PUBLIC_PATHS = ['/login', '/cadastro', '/recuperar-senha', '/auth', '/accept-invite'];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });

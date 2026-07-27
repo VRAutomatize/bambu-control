@@ -2,7 +2,13 @@ import Link from 'next/link';
 import { AuthForm } from '@/components/auth-form';
 import { signIn } from '../actions';
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+
   return (
     <div className="card p-7">
       <h1 className="mb-1 text-[19px] font-semibold tracking-[-0.01em]">Entrar</h1>
@@ -10,6 +16,7 @@ export default function LoginPage() {
         Acesse sua conta do Bambu Control.
       </p>
       <AuthForm action={signIn} submitLabel="Entrar">
+        {next && <input type="hidden" name="redirectTo" value={next} />}
         <div>
           <label className="label" htmlFor="email">
             E-mail
@@ -34,7 +41,10 @@ export default function LoginPage() {
         <Link href="/recuperar-senha" className="text-brand-600 hover:text-brand-700 dark:text-brand-400">
           Esqueci a senha
         </Link>
-        <Link href="/cadastro" className="text-brand-600 hover:text-brand-700 dark:text-brand-400">
+        <Link
+          href={next ? `/cadastro?next=${encodeURIComponent(next)}` : '/cadastro'}
+          className="text-brand-600 hover:text-brand-700 dark:text-brand-400"
+        >
           Criar conta
         </Link>
       </div>

@@ -2,13 +2,20 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 
+/** Só aceita caminhos internos (evita open redirect via ?next=https://...). */
+function safeRedirectTarget(raw: FormDataEntryValue | null, fallback: string): string {
+  const value = String(raw ?? '');
+  if (value.startsWith('/') && !value.startsWith('//')) return value;
+  return fallback;
+}
+
 export async function signIn(_prev: unknown, formData: FormData) {
   const email = String(formData.get('email') ?? '');
   const password = String(formData.get('password') ?? '');
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: 'E-mail ou senha inválidos.' };
-  redirect('/dashboard');
+  redirect(safeRedirectTarget(formData.get('redirectTo'), '/dashboard'));
 }
 
 export async function signUp(_prev: unknown, formData: FormData) {
@@ -24,7 +31,9 @@ export async function signUp(_prev: unknown, formData: FormData) {
     options: { data: { full_name: fullName } },
   });
   if (error) return { error: error.message };
-  redirect('/onboarding');
+  // Se veio de um convite (?next=/accept-invite?code=...), não manda para o
+  // onboarding de criar organização — o convite já resolve isso.
+  redirect(safeRedirectTarget(formData.get('redirectTo'), '/onboarding'));
 }
 
 export async function requestPasswordReset(_prev: unknown, formData: FormData) {

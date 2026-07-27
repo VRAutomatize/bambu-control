@@ -2,14 +2,23 @@ import Link from 'next/link';
 import { AuthForm } from '@/components/auth-form';
 import { signUp } from '../actions';
 
-export default function SignupPage() {
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+
   return (
     <div className="card p-7">
       <h1 className="mb-1 text-[19px] font-semibold tracking-[-0.01em]">Criar conta</h1>
       <p className="mb-6 text-[13.5px] text-neutral-500 dark:text-neutral-400">
-        Comece a controlar seus custos de impressão 3D.
+        {next?.startsWith('/accept-invite')
+          ? 'Crie sua conta para aceitar o convite recebido.'
+          : 'Comece a controlar seus custos de impressão 3D.'}
       </p>
       <AuthForm action={signUp} submitLabel="Criar conta">
+        {next && <input type="hidden" name="redirectTo" value={next} />}
         <div>
           <label className="label" htmlFor="fullName">
             Nome
@@ -42,7 +51,10 @@ export default function SignupPage() {
       </AuthForm>
       <p className="mt-5 text-center text-[13px] text-neutral-500 dark:text-neutral-400">
         Já tem conta?{' '}
-        <Link href="/login" className="text-brand-600 hover:text-brand-700 dark:text-brand-400">
+        <Link
+          href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'}
+          className="text-brand-600 hover:text-brand-700 dark:text-brand-400"
+        >
           Entrar
         </Link>
       </p>

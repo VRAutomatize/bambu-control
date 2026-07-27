@@ -346,7 +346,7 @@ export interface Database {
       };
       accept_organization_invite: {
         Args: { p_token: string };
-        Returns: Array<{ success: boolean; message: string; organization_id: Uuid | null }>;
+        Returns: Array<{ success: boolean; message: string; org_id: Uuid | null }>;
       };
     };
     Enums: { org_role: OrgRole };
