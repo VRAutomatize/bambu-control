@@ -197,15 +197,20 @@ Railway é o serviço de deploy. Você vai criar **2 serviços**: um para a web 
 Railway vai detectar `package.json` e usar Nixpacks. Precisamos customizar:
 
 1. No serviço **web**, clique em **Settings**
-2. **Build Command**:
+2. **Root Directory**: deixe vazio (raiz do monorepo) — **não** aponte para `apps/web`,
+   senão o pnpm workspace não resolve os pacotes `@bambu/*`
+3. **Build Command**:
    ```
-   pnpm install && pnpm build
+   pnpm install --frozen-lockfile && pnpm build
    ```
-3. **Start Command**:
+4. **Start Command**:
    ```
-   pnpm start
+   pnpm start:web
    ```
-4. **Root Directory**: (deixe vazio — Railway detecta automaticamente)
+   ⚠️ **Não** use `pnpm start` — não existe esse script na raiz do monorepo, e o
+   Railway vai falhar com `ERR_PNPM_NO_SCRIPT_OR_SERVER Missing script start or file
+   server.js`. O script `start:web` (definido no `package.json` raiz) roda
+   `pnpm --filter=@bambu/web start`, que é o `next start` de fato.
 
 #### C. Variáveis de ambiente (web)
 
@@ -260,15 +265,19 @@ SYNC_INTERVAL_MINUTES=10
 #### B. Customizar para worker
 
 1. No serviço **worker**, vá para **Settings**
-2. **Root Directory**: `apps/worker`
+2. **Root Directory**: deixe vazio (raiz do monorepo, mesmo motivo do serviço web)
 3. **Build Command**:
    ```
-   pnpm install --filter=worker && pnpm --filter=worker build
+   pnpm install --frozen-lockfile
    ```
+   O worker roda TypeScript direto via `tsx` (sem etapa de build/transpile), então
+   não precisa de `pnpm build` aqui.
 4. **Start Command**:
    ```
-   pnpm --filter=worker start
+   pnpm start:worker
    ```
+   O script `start:worker` roda `pnpm --filter=@bambu/worker start`. (O pacote se
+   chama `@bambu/worker`, não `worker` — usar o filtro errado também quebra o deploy.)
 
 #### C. Variáveis de ambiente (worker)
 
@@ -379,6 +388,16 @@ CREATE UNIQUE INDEX unique_pending_invite
   WHERE accepted_at IS NULL;
 ```
 
+### Erro: `ERR_PNPM_NO_SCRIPT_OR_SERVER Missing script start or file server.js`
+
+**Causa**: O Start Command do serviço no Railway está configurado como `pnpm start`
+(ou o **Root Directory** aponta para `apps/web`/`apps/worker`), e não existe script
+`start` na raiz do monorepo.
+**Solução**:
+- Serviço web → Start Command: `pnpm start:web`
+- Serviço worker → Start Command: `pnpm start:worker`
+- Root Directory de ambos os serviços: **vazio** (raiz do repo)
+
 ### Erro: "missing or invalid code"
 
 **Causa**: Middleware estava redirecionando `/accept-invite?code=...` para `/login` antes do handler processar.
@@ -392,7 +411,7 @@ CREATE UNIQUE INDEX unique_pending_invite
 ### Worker não sincroniza
 
 1. Confirme que `SUPABASE_DB_URL` está correto
-2. Verifique logs em Railway: `pnpm --filter=worker dev` localmente
+2. Verifique logs em Railway: `pnpm --filter=@bambu/worker dev` localmente
 3. Confirme que `SYNC_INTERVAL_MINUTES` não é 0
 
 ---

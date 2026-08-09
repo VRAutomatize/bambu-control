@@ -47,16 +47,21 @@ https://railway.app → Login com GitHub → New Project
 
 **Serviço 1: Web (Next.js)**
 - Conectar repositório GitHub: `vrautomatize/bambu-control`
-- Build Command: `pnpm install && pnpm build`
-- Start Command: `pnpm start`
+- Root Directory: **vazio** (raiz do repo — nunca `apps/web`, quebra o pnpm workspace)
+- Build Command: `pnpm install --frozen-lockfile && pnpm build`
+- Start Command: `pnpm start:web`
 - Adicionar variáveis de ambiente (ver passo 5)
 
 **Serviço 2: Worker (sync/cron)**
 - Mesmo repositório
-- Root Directory: `apps/worker`
-- Build Command: `pnpm install --filter=worker && pnpm --filter=worker build`
-- Start Command: `pnpm --filter=worker start`
+- Root Directory: **vazio** (mesmo motivo)
+- Build Command: `pnpm install --frozen-lockfile` (worker roda TS direto via `tsx`, sem build)
+- Start Command: `pnpm start:worker`
 - Mesmas variáveis de ambiente
+
+⚠️ **Nunca** use `pnpm start` puro como Start Command — não existe esse script na
+raiz do monorepo e o Railway crasha com `ERR_PNPM_NO_SCRIPT_OR_SERVER`. Use sempre
+`pnpm start:web` / `pnpm start:worker`.
 
 ### 5️⃣ Variáveis de ambiente (Railway)
 

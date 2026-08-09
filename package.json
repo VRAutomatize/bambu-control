@@ -14,7 +14,9 @@
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\""
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
+    "start:web": "pnpm --filter=@bambu/web start",
+    "start:worker": "pnpm --filter=@bambu/worker start"
   },
   "devDependencies": {
     "prettier": "^3.4.2",
