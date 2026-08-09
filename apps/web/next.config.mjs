@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone', // deploy enxuto no Railway
+  // NOTA: NÃO usar output: 'standalone' aqui — o deploy roda via `next start`
+  // (Railway/Nixpacks, sem Dockerfile custom rodando .next/standalone/server.js).
+  // "next start" é incompatível com output standalone: o manifest de Server
+  // Actions fica quebrado e todo signIn/signUp falha no browser com
+  // "An unexpected response was received from the server" (validado em
+  // produção — ver aviso "next start does not work with output: standalone").
   reactStrictMode: true,
   transpilePackages: ['@bambu/domain', '@bambu/providers', '@bambu/contracts', '@bambu/db'],
   experimental: {
