@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { requireUser } from '@/lib/auth';
 import { ORG_COOKIE_NAME } from '@/lib/auth';
 import { AuthForm } from '@/components/auth-form';
+import { Select } from '@/components/select';
 
 async function createOrg(_prev: unknown, formData: FormData) {
   'use server';
@@ -68,26 +69,31 @@ export default async function OnboardingPage() {
                 <label className="label" htmlFor="currency">
                   Moeda
                 </label>
-                <select id="currency" name="currency" className="input" defaultValue="BRL">
-                  <option value="BRL">Real (BRL)</option>
-                  <option value="USD">Dólar (USD)</option>
-                  <option value="EUR">Euro (EUR)</option>
-                </select>
+                <Select
+                  id="currency"
+                  name="currency"
+                  defaultValue="BRL"
+                  options={[
+                    { value: 'BRL', label: 'Real (BRL)' },
+                    { value: 'USD', label: 'Dólar (USD)' },
+                    { value: 'EUR', label: 'Euro (EUR)' },
+                  ]}
+                />
               </div>
               <div>
                 <label className="label" htmlFor="timezone">
                   Fuso horário
                 </label>
-                <select
+                <Select
                   id="timezone"
                   name="timezone"
-                  className="input"
                   defaultValue="America/Sao_Paulo"
-                >
-                  <option value="America/Sao_Paulo">America/Sao_Paulo</option>
-                  <option value="America/Manaus">America/Manaus</option>
-                  <option value="UTC">UTC</option>
-                </select>
+                  options={[
+                    { value: 'America/Sao_Paulo', label: 'America/Sao_Paulo' },
+                    { value: 'America/Manaus', label: 'America/Manaus' },
+                    { value: 'UTC', label: 'UTC' },
+                  ]}
+                />
               </div>
             </div>
           </AuthForm>

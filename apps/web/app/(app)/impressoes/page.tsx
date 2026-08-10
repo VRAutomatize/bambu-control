@@ -2,11 +2,13 @@ import Link from 'next/link';
 import { requireCurrentOrg } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader, Card, StatusBadge, LinkButton, EmptyState } from '@/components/ui';
+import { Select } from '@/components/select';
 import { formatWeight, formatDuration, formatDateTime } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
 const STATUSES = ['', 'completed', 'printing', 'pending', 'failed', 'cancelled'] as const;
+const STATUS_OPTIONS = STATUSES.map((s) => ({ value: s, label: s === '' ? 'Todos os status' : s }));
 
 export default async function ImpressoesPage({
   searchParams,
@@ -55,13 +57,12 @@ export default async function ImpressoesPage({
             defaultValue={params.q ?? ''}
             className="input max-w-xs"
           />
-          <select name="status" defaultValue={params.status ?? ''} className="input max-w-[180px]">
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s === '' ? 'Todos os status' : s}
-              </option>
-            ))}
-          </select>
+          <Select
+            name="status"
+            defaultValue={params.status ?? ''}
+            options={STATUS_OPTIONS}
+            className="max-w-[180px]"
+          />
           <button className="btn-secondary" type="submit">
             Filtrar
           </button>

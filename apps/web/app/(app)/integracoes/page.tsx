@@ -2,6 +2,7 @@ import { requireCurrentOrg } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader, Card, EmptyState, InlineAlert } from '@/components/ui';
 import { AuthForm } from '@/components/auth-form';
+import { Select } from '@/components/select';
 import { IconAlertTriangle, IconPlug } from '@/components/icons';
 import { formatDateTime } from '@/lib/format';
 import { connectBambu } from './actions';
@@ -192,10 +193,14 @@ export default async function IntegracoesPage() {
                   <>
                     <input name="account" className="input" placeholder="E-mail da conta Bambu" required />
                     <input name="password" type="password" className="input" placeholder="Senha" required />
-                    <select name="region" className="input" defaultValue="global">
-                      <option value="global">Conta global (bambulab.com)</option>
-                      <option value="china">Conta China (bambulab.cn)</option>
-                    </select>
+                    <Select
+                      name="region"
+                      defaultValue="global"
+                      options={[
+                        { value: 'global', label: 'Conta global (bambulab.com)' },
+                        { value: 'china', label: 'Conta China (bambulab.cn)' },
+                      ]}
+                    />
                     <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
                       <strong>Segurança:</strong> A senha é descartada após autenticação. Guardamos somente o token
                       criptografado.

@@ -1,6 +1,7 @@
 'use client';
 import { useActionState, useState } from 'react';
 import { IconAlertTriangle, IconPlus } from '@/components/icons';
+import { Select } from '@/components/select';
 import { createManualPrintJob } from '../actions';
 
 type Option = { id: string; label: string };
@@ -37,27 +38,30 @@ export function NewPrintJobForm({
           <label className="label" htmlFor="printerId">
             Impressora
           </label>
-          <select id="printerId" name="printerId" className="input" defaultValue="">
-            <option value="">— Nenhuma —</option>
-            {printers.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </select>
+          <Select
+            id="printerId"
+            name="printerId"
+            placeholder="— Nenhuma —"
+            options={printers.map((p) => ({ value: p.id, label: p.label }))}
+          />
         </div>
 
         <div>
           <label className="label" htmlFor="normalizedStatus">
             Status
           </label>
-          <select id="normalizedStatus" name="normalizedStatus" className="input" defaultValue="completed">
-            <option value="completed">Concluída</option>
-            <option value="printing">Imprimindo</option>
-            <option value="pending">Pendente</option>
-            <option value="failed">Falhou</option>
-            <option value="cancelled">Cancelada</option>
-          </select>
+          <Select
+            id="normalizedStatus"
+            name="normalizedStatus"
+            defaultValue="completed"
+            options={[
+              { value: 'completed', label: 'Concluída' },
+              { value: 'printing', label: 'Imprimindo' },
+              { value: 'pending', label: 'Pendente' },
+              { value: 'failed', label: 'Falhou' },
+              { value: 'cancelled', label: 'Cancelada' },
+            ]}
+          />
         </div>
 
         <div>
@@ -107,33 +111,27 @@ export function NewPrintJobForm({
               : [];
             return (
               <div key={row} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr,1fr,110px,auto]">
-                <select
+                <Select
                   name="materialFilamentId"
-                  className="input"
-                  defaultValue=""
-                  onChange={(e) => setRowFilament((prev) => ({ ...prev, [row]: e.target.value }))}
-                >
-                  <option value="">— Filamento —</option>
-                  {filaments.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.label}
-                    </option>
-                  ))}
-                </select>
-                <select name="materialSpoolId" className="input" defaultValue="" disabled={!selectedFilament}>
-                  <option value="">
-                    {selectedFilament
+                  placeholder="— Filamento —"
+                  options={filaments.map((f) => ({ value: f.id, label: f.label }))}
+                  onChange={(v) => setRowFilament((prev) => ({ ...prev, [row]: v }))}
+                />
+                <Select
+                  // Remonta ao trocar de filamento — descarta o rolo
+                  // selecionado antes, já que a lista de opções mudou.
+                  key={`spool-${row}-${selectedFilament ?? ''}`}
+                  name="materialSpoolId"
+                  disabled={!selectedFilament}
+                  placeholder={
+                    selectedFilament
                       ? availableSpools.length > 0
                         ? '— Rolo (opcional) —'
                         : 'Sem rolos em estoque'
-                      : 'Selecione o filamento primeiro'}
-                  </option>
-                  {availableSpools.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
+                      : 'Selecione o filamento primeiro'
+                  }
+                  options={availableSpools.map((s) => ({ value: s.id, label: s.label }))}
+                />
                 <input
                   name="materialWeightG"
                   type="number"

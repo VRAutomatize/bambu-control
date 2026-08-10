@@ -2,6 +2,13 @@
 import { useActionState } from 'react';
 import { inviteMember } from './actions';
 import { IconCheckCircle, IconAlertTriangle } from '@/components/icons';
+import { Select } from '@/components/select';
+
+const ROLE_OPTIONS = [
+  { value: 'viewer', label: 'Visualizador — apenas leitura' },
+  { value: 'operator', label: 'Operador — usar impressoras, sincronizar' },
+  { value: 'admin', label: 'Administrador — gerenciar tudo' },
+];
 
 export function InviteMemberForm() {
   const [state, formAction, isPending] = useActionState(inviteMember, null);
@@ -27,11 +34,13 @@ export function InviteMemberForm() {
         <label htmlFor="role" className="block text-[12px] font-medium text-neutral-500 dark:text-neutral-400 mb-1.5">
           Papel do membro
         </label>
-        <select name="role" id="role" className="input" disabled={isPending}>
-          <option value="viewer">Visualizador — apenas leitura</option>
-          <option value="operator">Operador — usar impressoras, sincronizar</option>
-          <option value="admin">Administrador — gerenciar tudo</option>
-        </select>
+        <Select
+          name="role"
+          id="role"
+          options={ROLE_OPTIONS}
+          defaultValue="viewer"
+          disabled={isPending}
+        />
       </div>
 
       {state?.error && (

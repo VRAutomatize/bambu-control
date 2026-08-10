@@ -1,6 +1,7 @@
 'use client';
 import { useActionState, useState } from 'react';
 import { IconAlertTriangle, IconPlus } from '@/components/icons';
+import { Select } from '@/components/select';
 import { formatMoney } from '@/lib/format';
 import { createOrder } from '../actions';
 
@@ -42,14 +43,12 @@ export function OrderForm({
           <label className="label" htmlFor="customerId">
             Cliente
           </label>
-          <select id="customerId" name="customerId" className="input" defaultValue="">
-            <option value="">— Sem cliente —</option>
-            {customers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
+          <Select
+            id="customerId"
+            name="customerId"
+            placeholder="— Sem cliente —"
+            options={customers.map((c) => ({ value: c.id, label: c.label }))}
+          />
         </div>
       </div>
 

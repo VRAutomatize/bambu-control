@@ -2,6 +2,7 @@ import { requireCurrentOrg } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader, Card, EmptyState } from '@/components/ui';
 import { AuthForm } from '@/components/auth-form';
+import { Select } from '@/components/select';
 import { IconAlertTriangle } from '@/components/icons';
 import { formatMoney, formatWeight } from '@/lib/format';
 import { createFilament, createSpool } from './actions';
@@ -197,17 +198,15 @@ export default async function FilamentosPage() {
             <Card>
               <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Adicionar rolo ao estoque</h2>
               <AuthForm action={createSpool} submitLabel="Adicionar rolo">
-                <select name="filamentId" required className="input" defaultValue="">
-                  <option value="" disabled>
-                    — Filamento —
-                  </option>
-                  {filaments.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.brand ? `${f.brand} — ` : ''}
-                      {f.name}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  name="filamentId"
+                  required
+                  placeholder="— Filamento —"
+                  options={filaments.map((f) => ({
+                    value: f.id,
+                    label: `${f.brand ? `${f.brand} — ` : ''}${f.name}`,
+                  }))}
+                />
                 <input name="label" className="input" placeholder="Rótulo (ex.: Rolo #1)" />
                 <input
                   name="initialNetWeightG"

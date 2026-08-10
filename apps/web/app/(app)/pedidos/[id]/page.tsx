@@ -4,6 +4,7 @@ import { requireCurrentOrg } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader, Card, StatCard } from '@/components/ui';
 import { AuthForm } from '@/components/auth-form';
+import { Select } from '@/components/select';
 import { formatMoney, formatMargin, formatDate } from '@/lib/format';
 import { addPayment, associatePrintJob } from '../actions';
 
@@ -130,22 +131,21 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
               Associar impressão a um item
             </h3>
             <AuthForm action={associateAction} submitLabel="Associar">
-              <select name="orderItemId" required className="input">
-                <option value="">— Item —</option>
-                {items.map((it) => (
-                  <option key={it.id} value={it.id}>
-                    {it.description}
-                  </option>
-                ))}
-              </select>
-              <select name="printJobId" required className="input">
-                <option value="">— Impressão —</option>
-                {jobs.map((j) => (
-                  <option key={j.id} value={j.id}>
-                    {j.title ?? j.id} ({j.quantityAvailable} disponível{j.quantityAvailable === 1 ? '' : 'is'})
-                  </option>
-                ))}
-              </select>
+              <Select
+                name="orderItemId"
+                required
+                placeholder="— Item —"
+                options={items.map((it) => ({ value: it.id, label: it.description }))}
+              />
+              <Select
+                name="printJobId"
+                required
+                placeholder="— Impressão —"
+                options={jobs.map((j) => ({
+                  value: j.id,
+                  label: `${j.title ?? j.id} (${j.quantityAvailable} disponível${j.quantityAvailable === 1 ? '' : 'is'})`,
+                }))}
+              />
               <input name="allocatedQuantity" type="number" min="1" step="1" defaultValue="1" className="input" placeholder="Qtd alocada" />
             </AuthForm>
           </div>
@@ -175,12 +175,16 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
           </h3>
           <AuthForm action={paymentAction} submitLabel="Registrar">
             <input name="amount" type="number" min="0.01" step="0.01" required className="input" placeholder="Valor (R$)" />
-            <select name="paymentMethod" className="input" defaultValue="pix">
-              <option value="pix">PIX</option>
-              <option value="dinheiro">Dinheiro</option>
-              <option value="cartao">Cartão</option>
-              <option value="transferencia">Transferência</option>
-            </select>
+            <Select
+              name="paymentMethod"
+              defaultValue="pix"
+              options={[
+                { value: 'pix', label: 'PIX' },
+                { value: 'dinheiro', label: 'Dinheiro' },
+                { value: 'cartao', label: 'Cartão' },
+                { value: 'transferencia', label: 'Transferência' },
+              ]}
+            />
           </AuthForm>
         </Card>
       </div>
