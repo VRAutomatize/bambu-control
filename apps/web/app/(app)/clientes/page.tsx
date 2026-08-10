@@ -41,8 +41,10 @@ export default async function ClientesPage() {
                   </thead>
                   <tbody>
                     {customers.map((c) => (
-                      <tr key={c.id} className={`table-row ${c.active ? '' : 'opacity-50'}`}>
-                        <td className="table-cell font-medium text-neutral-900 dark:text-neutral-100">
+                      <tr key={c.id} className="table-row">
+                        <td
+                          className={`table-cell font-medium ${c.active ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-400 dark:text-neutral-500'}`}
+                        >
                           <Link href={`/pedidos?customer=${c.id}`} className="hover:text-brand-600">
                             {c.name}
                           </Link>

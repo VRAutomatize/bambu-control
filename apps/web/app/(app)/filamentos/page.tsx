@@ -95,8 +95,10 @@ export default async function FilamentosPage() {
                     </thead>
                     <tbody>
                       {filaments.map((f) => (
-                        <tr key={f.id} className={`table-row ${f.active ? '' : 'opacity-50'}`}>
-                          <td className="table-cell font-medium text-neutral-900 dark:text-neutral-100">
+                        <tr key={f.id} className="table-row">
+                          <td
+                            className={`table-cell font-medium ${f.active ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-400 dark:text-neutral-500'}`}
+                          >
                             {f.brand ? `${f.brand} — ` : ''}
                             {f.name}
                           </td>

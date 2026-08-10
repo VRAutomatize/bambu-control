@@ -39,13 +39,15 @@ export default async function ImpressorasPage() {
                   ? p.machine_cost_profiles[0]
                   : p.machine_cost_profiles;
                 return (
-                  <Card key={p.id} className={p.active ? '' : 'opacity-50'}>
+                  <Card key={p.id}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2.5">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-neutral-100 text-neutral-500 dark:bg-white/[0.06] dark:text-neutral-400">
                           <IconPrinter width={17} height={17} />
                         </div>
-                        <h3 className="text-[14px] font-semibold text-neutral-900 dark:text-neutral-100">
+                        <h3
+                          className={`text-[14px] font-semibold ${p.active ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-400 dark:text-neutral-500'}`}
+                        >
                           {p.name}
                         </h3>
                       </div>

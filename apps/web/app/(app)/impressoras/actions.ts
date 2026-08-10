@@ -63,24 +63,46 @@ export async function updatePrinter(_prev: unknown, formData: FormData) {
     .eq('organization_id', org.organizationId);
   if (error) return { error: error.message };
 
-  // O perfil de custo é editado junto (criado automaticamente ao cadastrar
-  // a impressora) — mantém nome e escopo em sincronia.
+  const costFields = {
+    purchase_price: Number(formData.get('purchasePrice')) || 0,
+    residual_value: Number(formData.get('residualValue')) || 0,
+    useful_life_hours: Number(formData.get('usefulLifeHours')) || 0,
+    average_power_w: Number(formData.get('averagePowerW')) || 0,
+    electricity_price_kwh: Number(formData.get('electricityPriceKwh')) || 0,
+    maintenance_cost_per_hour: Number(formData.get('maintenanceCostPerHour')) || 0,
+    overhead_cost_per_hour: Number(formData.get('overheadCostPerHour')) || 0,
+  };
+
   if (costProfileId) {
+    // Perfil de custo já existe (impressora cadastrada manualmente) —
+    // edita junto, mantendo nome e escopo em sincronia.
     const { error: profErr } = await supabase
       .from('machine_cost_profiles')
-      .update({
-        name: `${name} — custo`,
-        purchase_price: Number(formData.get('purchasePrice')) || 0,
-        residual_value: Number(formData.get('residualValue')) || 0,
-        useful_life_hours: Number(formData.get('usefulLifeHours')) || 0,
-        average_power_w: Number(formData.get('averagePowerW')) || 0,
-        electricity_price_kwh: Number(formData.get('electricityPriceKwh')) || 0,
-        maintenance_cost_per_hour: Number(formData.get('maintenanceCostPerHour')) || 0,
-        overhead_cost_per_hour: Number(formData.get('overheadCostPerHour')) || 0,
-      })
+      .update({ name: `${name} — custo`, ...costFields })
       .eq('id', costProfileId)
       .eq('organization_id', org.organizationId);
     if (profErr) return { error: profErr.message };
+  } else {
+    // Impressoras vindas de sincronização (Bambu Cloud) não nascem com um
+    // perfil de custo — criamos um agora com os valores informados, em vez
+    // de descartar silenciosamente o que foi digitado no formulário.
+    const { data: profile, error: profErr } = await supabase
+      .from('machine_cost_profiles')
+      .insert({
+        organization_id: org.organizationId,
+        name: `${name} — custo`,
+        calculation_mode: 'calculated',
+        ...costFields,
+      })
+      .select('id')
+      .single();
+    if (profErr) return { error: profErr.message };
+    const { error: linkErr } = await supabase
+      .from('printers')
+      .update({ machine_cost_profile_id: profile.id })
+      .eq('id', id)
+      .eq('organization_id', org.organizationId);
+    if (linkErr) return { error: linkErr.message };
   }
 
   revalidatePath('/impressoras');

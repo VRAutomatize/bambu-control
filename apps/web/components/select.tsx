@@ -109,7 +109,25 @@ export function Select({
 
   return (
     <div ref={rootRef} className={`relative ${className}`}>
-      {name && <input type="hidden" name={name} value={value} required={required} />}
+      {name &&
+        (required ? (
+          // `required` não tem efeito num <input type="hidden"> — o HTML
+          // isenta esse tipo de validação. Pra validação nativa do form
+          // funcionar de verdade (e o navegador focar/apontar pro campo
+          // certo em vez de deixar passar um valor vazio até um erro cru
+          // do servidor), usamos um input real, só visualmente oculto.
+          <input
+            name={name}
+            value={value}
+            readOnly
+            required
+            tabIndex={-1}
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-px w-full opacity-0"
+          />
+        ) : (
+          <input type="hidden" name={name} value={value} />
+        ))}
       <button
         type="button"
         id={selectId}
@@ -135,6 +153,11 @@ export function Select({
           role="listbox"
           className="absolute z-50 mt-1.5 max-h-64 w-full overflow-auto rounded-2xl border border-black/[0.06] bg-white/95 p-1.5 shadow-card backdrop-blur-xl dark:border-white/[0.08] dark:bg-neutral-900/95"
         >
+          {options.length === 0 && (
+            <p className="px-3 py-2 text-[13px] text-neutral-400 dark:text-neutral-500">
+              Nenhuma opção disponível
+            </p>
+          )}
           {options.map((opt, i) => (
             <button
               key={opt.value}
