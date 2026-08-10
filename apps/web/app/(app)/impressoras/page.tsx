@@ -1,58 +1,24 @@
-import { revalidatePath } from 'next/cache';
-import { requireCurrentOrg, canWrite } from '@/lib/auth';
+import { requireCurrentOrg } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader, Card, EmptyState } from '@/components/ui';
 import { AuthForm } from '@/components/auth-form';
+import { EditButton } from '@/components/edit-button';
+import { ConfirmActionButton } from '@/components/confirm-action-button';
+import { ToggleActiveButton } from '@/components/toggle-active-button';
 import { IconPrinter } from '@/components/icons';
 import { formatDateTime } from '@/lib/format';
+import { createPrinter, updatePrinter, deletePrinter, togglePrinterActive } from './actions';
 
 export const dynamic = 'force-dynamic';
-
-async function createPrinter(_prev: unknown, formData: FormData) {
-  'use server';
-  const { org } = await requireCurrentOrg();
-  if (!canWrite(org.role)) return { error: 'Sem permissão.' };
-  const name = String(formData.get('name') ?? '').trim();
-  if (name.length < 1) return { error: 'Informe o nome da impressora.' };
-
-  const supabase = await createClient();
-  // Cria um perfil de custo (modo calculado) junto com a impressora.
-  const { data: profile, error: profErr } = await supabase
-    .from('machine_cost_profiles')
-    .insert({
-      organization_id: org.organizationId,
-      name: `${name} — custo`,
-      calculation_mode: 'calculated',
-      purchase_price: Number(formData.get('purchasePrice')) || 0,
-      residual_value: Number(formData.get('residualValue')) || 0,
-      useful_life_hours: Number(formData.get('usefulLifeHours')) || 0,
-      average_power_w: Number(formData.get('averagePowerW')) || 0,
-      electricity_price_kwh: Number(formData.get('electricityPriceKwh')) || 0,
-      maintenance_cost_per_hour: Number(formData.get('maintenanceCostPerHour')) || 0,
-      overhead_cost_per_hour: Number(formData.get('overheadCostPerHour')) || 0,
-    })
-    .select('id')
-    .single();
-  if (profErr) return { error: profErr.message };
-
-  const { error } = await supabase.from('printers').insert({
-    organization_id: org.organizationId,
-    name,
-    model: String(formData.get('model') ?? '') || null,
-    location: String(formData.get('location') ?? '') || null,
-    machine_cost_profile_id: profile.id,
-  });
-  if (error) return { error: error.message };
-  revalidatePath('/impressoras');
-  return { ok: 'Impressora cadastrada.' };
-}
 
 export default async function ImpressorasPage() {
   const { org } = await requireCurrentOrg();
   const supabase = await createClient();
   const { data: printers } = await supabase
     .from('printers')
-    .select('id, name, model, location, serial_number, active, last_seen_at')
+    .select(
+      'id, name, model, location, serial_number, active, last_seen_at, machine_cost_profile_id, machine_cost_profiles(id, purchase_price, residual_value, useful_life_hours, average_power_w, electricity_price_kwh, maintenance_cost_per_hour, overhead_cost_per_hour)',
+    )
     .eq('organization_id', org.organizationId)
     .order('name');
 
@@ -68,31 +34,108 @@ export default async function ImpressorasPage() {
             <EmptyState title="Nenhuma impressora" description="Cadastre sua primeira máquina ao lado." />
           ) : (
             <div className="grid gap-3.5 sm:grid-cols-2">
-              {printers.map((p) => (
-                <Card key={p.id}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-neutral-100 text-neutral-500 dark:bg-white/[0.06] dark:text-neutral-400">
-                        <IconPrinter width={17} height={17} />
+              {printers.map((p) => {
+                const profile = Array.isArray(p.machine_cost_profiles)
+                  ? p.machine_cost_profiles[0]
+                  : p.machine_cost_profiles;
+                return (
+                  <Card key={p.id} className={p.active ? '' : 'opacity-50'}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-neutral-100 text-neutral-500 dark:bg-white/[0.06] dark:text-neutral-400">
+                          <IconPrinter width={17} height={17} />
+                        </div>
+                        <h3 className="text-[14px] font-semibold text-neutral-900 dark:text-neutral-100">
+                          {p.name}
+                        </h3>
                       </div>
-                      <h3 className="text-[14px] font-semibold text-neutral-900 dark:text-neutral-100">
-                        {p.name}
-                      </h3>
+                      <span
+                        className={`badge shrink-0 ${p.active ? 'bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-400' : 'bg-neutral-100 text-neutral-500 dark:bg-white/10 dark:text-neutral-400'}`}
+                      >
+                        {p.active ? 'Ativa' : 'Inativa'}
+                      </span>
                     </div>
-                    <span
-                      className={`badge shrink-0 ${p.active ? 'bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-400' : 'bg-neutral-100 text-neutral-500 dark:bg-white/10 dark:text-neutral-400'}`}
-                    >
-                      {p.active ? 'Ativa' : 'Inativa'}
-                    </span>
-                  </div>
-                  <dl className="mt-3.5 space-y-1.5 text-[13px]">
-                    <PrinterRow label="Modelo" value={p.model ?? '—'} />
-                    <PrinterRow label="Local" value={p.location ?? '—'} />
-                    <PrinterRow label="Serial" value={maskSerial(p.serial_number)} />
-                    <PrinterRow label="Última sync" value={formatDateTime(p.last_seen_at, org.timezone)} />
-                  </dl>
-                </Card>
-              ))}
+                    <dl className="mt-3.5 space-y-1.5 text-[13px]">
+                      <PrinterRow label="Modelo" value={p.model ?? '—'} />
+                      <PrinterRow label="Local" value={p.location ?? '—'} />
+                      <PrinterRow label="Serial" value={maskSerial(p.serial_number)} />
+                      <PrinterRow label="Última sync" value={formatDateTime(p.last_seen_at, org.timezone)} />
+                    </dl>
+                    <div className="mt-4 flex items-center justify-end gap-3 border-t border-black/[0.06] pt-3 dark:border-white/[0.08]">
+                      <EditButton title="Editar impressora" action={updatePrinter}>
+                        <input type="hidden" name="id" value={p.id} />
+                        <input type="hidden" name="costProfileId" value={p.machine_cost_profile_id ?? ''} />
+                        <input name="name" required defaultValue={p.name} className="input" placeholder="Nome" />
+                        <input name="model" defaultValue={p.model ?? ''} className="input" placeholder="Modelo" />
+                        <input name="location" defaultValue={p.location ?? ''} className="input" placeholder="Local" />
+                        <p className="pb-0.5 pt-2 text-[11.5px] font-medium uppercase tracking-wide text-neutral-400">
+                          Perfil de custo (modo calculado)
+                        </p>
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <input
+                            name="purchasePrice"
+                            type="number"
+                            step="0.01"
+                            defaultValue={profile?.purchase_price ?? 0}
+                            className="input"
+                            placeholder="Preço compra"
+                          />
+                          <input
+                            name="residualValue"
+                            type="number"
+                            step="0.01"
+                            defaultValue={profile?.residual_value ?? 0}
+                            className="input"
+                            placeholder="Valor residual"
+                          />
+                          <input
+                            name="usefulLifeHours"
+                            type="number"
+                            step="1"
+                            defaultValue={profile?.useful_life_hours ?? 0}
+                            className="input"
+                            placeholder="Vida útil (h)"
+                          />
+                          <input
+                            name="averagePowerW"
+                            type="number"
+                            step="1"
+                            defaultValue={profile?.average_power_w ?? 0}
+                            className="input"
+                            placeholder="Potência (W)"
+                          />
+                          <input
+                            name="electricityPriceKwh"
+                            type="number"
+                            step="0.01"
+                            defaultValue={profile?.electricity_price_kwh ?? 0}
+                            className="input"
+                            placeholder="R$/kWh"
+                          />
+                          <input
+                            name="maintenanceCostPerHour"
+                            type="number"
+                            step="0.01"
+                            defaultValue={profile?.maintenance_cost_per_hour ?? 0}
+                            className="input"
+                            placeholder="Manut./h"
+                          />
+                          <input
+                            name="overheadCostPerHour"
+                            type="number"
+                            step="0.01"
+                            defaultValue={profile?.overhead_cost_per_hour ?? 0}
+                            className="input"
+                            placeholder="Overhead/h"
+                          />
+                        </div>
+                      </EditButton>
+                      <ToggleActiveButton action={togglePrinterActive} id={p.id} active={p.active} />
+                      <ConfirmActionButton action={deletePrinter} id={p.id} icon={false} label="Excluir" />
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>

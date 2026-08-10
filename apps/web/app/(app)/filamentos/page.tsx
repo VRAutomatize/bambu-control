@@ -5,8 +5,11 @@ import { AuthForm } from '@/components/auth-form';
 import { Select } from '@/components/select';
 import { ColorPickerField } from '@/components/color-picker';
 import { IconAlertTriangle } from '@/components/icons';
+import { EditButton } from '@/components/edit-button';
+import { ConfirmActionButton } from '@/components/confirm-action-button';
+import { ToggleActiveButton } from '@/components/toggle-active-button';
 import { formatMoney, formatWeight } from '@/lib/format';
-import { createFilament, createSpool } from './actions';
+import { createFilament, createSpool, updateFilament, deleteFilament, toggleFilamentActive } from './actions';
 import { ArchiveSpoolButton } from './spool-actions';
 
 export const dynamic = 'force-dynamic';
@@ -44,6 +47,7 @@ export default async function FilamentosPage() {
   ]);
 
   const filaments = filamentsRes.data ?? [];
+  const activeFilaments = filaments.filter((f) => f.active);
   const spools = spoolsRes.data ?? [];
   const filamentById = new Map(filaments.map((f) => [f.id, f]));
 
@@ -85,11 +89,13 @@ export default async function FilamentosPage() {
                         <th className="table-cell-head">Material</th>
                         <th className="table-cell-head">Cor</th>
                         <th className="table-cell-head">Preço/kg</th>
+                        <th className="table-cell-head">Status</th>
+                        <th className="table-cell-head" />
                       </tr>
                     </thead>
                     <tbody>
                       {filaments.map((f) => (
-                        <tr key={f.id} className="table-row">
+                        <tr key={f.id} className={`table-row ${f.active ? '' : 'opacity-50'}`}>
                           <td className="table-cell font-medium text-neutral-900 dark:text-neutral-100">
                             {f.brand ? `${f.brand} — ` : ''}
                             {f.name}
@@ -106,6 +112,51 @@ export default async function FilamentosPage() {
                           </td>
                           <td className="table-cell tabular-nums">
                             {formatMoney(f.default_price_per_kg, org.currency)}
+                          </td>
+                          <td className="table-cell">
+                            <span
+                              className={`badge ${f.active ? 'bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-400' : 'bg-neutral-100 text-neutral-500 dark:bg-white/10 dark:text-neutral-400'}`}
+                            >
+                              {f.active ? 'Ativo' : 'Inativo'}
+                            </span>
+                          </td>
+                          <td className="table-cell">
+                            <div className="flex items-center justify-end gap-3">
+                              <EditButton title="Editar filamento" action={updateFilament} iconOnly>
+                                <input type="hidden" name="id" value={f.id} />
+                                <input
+                                  name="name"
+                                  required
+                                  defaultValue={f.name}
+                                  className="input"
+                                  placeholder="Nome (ex.: PLA Basic)"
+                                />
+                                <input name="brand" defaultValue={f.brand ?? ''} className="input" placeholder="Marca" />
+                                <input
+                                  name="material"
+                                  defaultValue={f.material ?? ''}
+                                  className="input"
+                                  placeholder="Material (PLA, PETG…)"
+                                />
+                                <ColorPickerField
+                                  nameField="colorName"
+                                  hexField="colorHex"
+                                  defaultName={f.color_name ?? ''}
+                                  defaultHex={f.color_hex ?? ''}
+                                />
+                                <input
+                                  name="defaultPricePerKg"
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  defaultValue={f.default_price_per_kg}
+                                  className="input"
+                                  placeholder="Preço por kg (R$)"
+                                />
+                              </EditButton>
+                              <ToggleActiveButton action={toggleFilamentActive} id={f.id} active={f.active} />
+                              <ConfirmActionButton action={deleteFilament} id={f.id} icon={false} label="Excluir" />
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -192,7 +243,7 @@ export default async function FilamentosPage() {
             </AuthForm>
           </Card>
 
-          {filaments.length > 0 && (
+          {activeFilaments.length > 0 && (
             <Card>
               <h2 className="mb-4 text-[15px] font-semibold tracking-[-0.01em]">Adicionar rolo ao estoque</h2>
               <AuthForm action={createSpool} submitLabel="Adicionar rolo">
@@ -200,7 +251,7 @@ export default async function FilamentosPage() {
                   name="filamentId"
                   required
                   placeholder="— Filamento —"
-                  options={filaments.map((f) => ({
+                  options={activeFilaments.map((f) => ({
                     value: f.id,
                     label: `${f.brand ? `${f.brand} — ` : ''}${f.name}`,
                   }))}

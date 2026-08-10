@@ -1,5 +1,5 @@
 'use client';
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { IconAlertTriangle, IconCheckCircle } from './icons';
 
 type ActionState = { error?: string; ok?: string } | undefined;
@@ -9,12 +9,21 @@ export function AuthForm({
   action,
   submitLabel,
   children,
+  onSuccess,
 }: {
   action: Action;
   submitLabel: string;
   children: React.ReactNode;
+  /** Chamado quando a action retorna `ok` (ex.: fechar um modal de edição). */
+  onSuccess?: () => void;
 }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(action, undefined);
+
+  useEffect(() => {
+    if (state?.ok) onSuccess?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
   return (
     <form action={formAction} className="space-y-3.5">
       {children}
