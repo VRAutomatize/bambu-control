@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { PageHeader, Card, EmptyState } from '@/components/ui';
 import { AuthForm } from '@/components/auth-form';
 import { Select } from '@/components/select';
+import { ColorPickerField } from '@/components/color-picker';
 import { IconAlertTriangle } from '@/components/icons';
 import { formatMoney, formatWeight } from '@/lib/format';
 import { createFilament, createSpool } from './actions';
@@ -179,10 +180,7 @@ export default async function FilamentosPage() {
               <input name="name" required className="input" placeholder="Nome (ex.: PLA Basic)" />
               <input name="brand" className="input" placeholder="Marca" />
               <input name="material" className="input" placeholder="Material (PLA, PETG…)" />
-              <div className="grid grid-cols-2 gap-2.5">
-                <input name="colorName" className="input" placeholder="Cor" />
-                <input name="colorHex" className="input" placeholder="#00A651" />
-              </div>
+              <ColorPickerField nameField="colorName" hexField="colorHex" />
               <input
                 name="defaultPricePerKg"
                 type="number"
