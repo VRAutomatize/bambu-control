@@ -42,6 +42,7 @@ export function NewPrintJobForm({
             id="printerId"
             name="printerId"
             placeholder="— Nenhuma —"
+            searchable
             options={printers.map((p) => ({ value: p.id, label: p.label }))}
           />
         </div>
@@ -104,34 +105,44 @@ export function NewPrintJobForm({
           </p>
         </div>
         <div className="space-y-2 rounded-2xl border border-black/[0.06] bg-black/[0.015] p-3 dark:border-white/[0.07] dark:bg-white/[0.02]">
+          {/* O rolo (spool) é só pra quem escolhe rastrear estoque físico —
+              o cadastro de filamento não exige isso. Se a organização não
+              tem NENHUM rolo cadastrado, a coluna some por completo em vez
+              de mostrar um seletor sempre vazio/desabilitado. */}
           {materialRows.map((row, idx) => {
             const selectedFilament = rowFilament[row];
             const availableSpools = selectedFilament
               ? spools.filter((s) => s.filamentId === selectedFilament)
               : [];
             return (
-              <div key={row} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr,1fr,110px,auto]">
+              <div
+                key={row}
+                className={`grid grid-cols-1 gap-2 ${spools.length > 0 ? 'sm:grid-cols-[1fr,1fr,110px,auto]' : 'sm:grid-cols-[1fr,110px,auto]'}`}
+              >
                 <Select
                   name="materialFilamentId"
+                  searchable
                   placeholder="— Filamento —"
                   options={filaments.map((f) => ({ value: f.id, label: f.label }))}
                   onChange={(v) => setRowFilament((prev) => ({ ...prev, [row]: v }))}
                 />
-                <Select
-                  // Remonta ao trocar de filamento — descarta o rolo
-                  // selecionado antes, já que a lista de opções mudou.
-                  key={`spool-${row}-${selectedFilament ?? ''}`}
-                  name="materialSpoolId"
-                  disabled={!selectedFilament}
-                  placeholder={
-                    selectedFilament
-                      ? availableSpools.length > 0
-                        ? '— Rolo (opcional) —'
-                        : 'Sem rolos em estoque'
-                      : 'Selecione o filamento primeiro'
-                  }
-                  options={availableSpools.map((s) => ({ value: s.id, label: s.label }))}
-                />
+                {spools.length > 0 && (
+                  <Select
+                    // Remonta ao trocar de filamento — descarta o rolo
+                    // selecionado antes, já que a lista de opções mudou.
+                    key={`spool-${row}-${selectedFilament ?? ''}`}
+                    name="materialSpoolId"
+                    disabled={!selectedFilament}
+                    placeholder={
+                      selectedFilament
+                        ? availableSpools.length > 0
+                          ? '— Rolo (opcional) —'
+                          : 'Nenhum rolo deste filamento'
+                        : 'Selecione o filamento primeiro'
+                    }
+                    options={availableSpools.map((s) => ({ value: s.id, label: s.label }))}
+                  />
+                )}
                 <input
                   name="materialWeightG"
                   type="number"

@@ -111,3 +111,161 @@ export async function recalculate(printJobId: string) {
   await recalculatePrintJob(supabase, org.organizationId, printJobId);
   revalidatePath(`/impressoes/${printJobId}`);
 }
+
+/** Edita os dados de qualquer impressão (manual, CSV ou vinda de
+ * sincronização) e gera um novo snapshot de custo. Necessário sobretudo
+ * pra impressões sincronizadas da Bambu Cloud, que chegam sem custo
+ * algum — o worker não sabe qual filamento foi usado. */
+export async function updatePrintJob(_prev: unknown, formData: FormData) {
+  const { org } = await requireCurrentOrg();
+  if (!canWrite(org.role)) return { error: 'Sem permissão.' };
+  const id = String(formData.get('id') ?? '');
+  if (!id) return { error: 'Impressão inválida.' };
+
+  const parsed = manualPrintJobSchema.safeParse({
+    title: formData.get('title'),
+    printerId: formData.get('printerId') || null,
+    normalizedStatus: formData.get('normalizedStatus') || 'completed',
+    manualDurationS: formData.get('durationMin')
+      ? Number(formData.get('durationMin')) * 60
+      : null,
+    manualWeightG: formData.get('manualWeightG') || null,
+    quantityProduced: formData.get('quantityProduced') || 1,
+    laborCost: formData.get('laborCost') || 0,
+    packagingCost: formData.get('packagingCost') || 0,
+    otherCost: formData.get('otherCost') || 0,
+    failurePercentage: formData.get('failurePercentage') || 0,
+  });
+  if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? 'Dados inválidos.' };
+  const input = parsed.data;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('print_jobs')
+    .update({
+      title: input.title,
+      printer_id: input.printerId,
+      normalized_status: input.normalizedStatus,
+      manual_status: input.normalizedStatus,
+      manual_duration_s: input.manualDurationS,
+      manual_weight_g: input.manualWeightG,
+      quantity_produced: input.quantityProduced,
+    })
+    .eq('id', id)
+    .eq('organization_id', org.organizationId);
+  if (error) return { error: error.message };
+
+  await recalculatePrintJob(supabase, org.organizationId, id, {
+    laborCost: input.laborCost,
+    packagingCost: input.packagingCost,
+    otherCost: input.otherCost,
+    failurePercentage: input.failurePercentage,
+  });
+
+  revalidatePath('/impressoes');
+  revalidatePath(`/impressoes/${id}`);
+  revalidatePath('/dashboard');
+  return { ok: 'Impressão atualizada.' };
+}
+
+/** Exclusão definitiva. Bloqueada (com mensagem clara) se a impressão
+ * estiver vinculada a um item de pedido — excluir apagaria esse vínculo
+ * de faturamento sem avisar ninguém (order_item_print_jobs é ON DELETE
+ * CASCADE). Peça pra desassociar do pedido primeiro. */
+export async function deletePrintJob(id: string) {
+  const { org } = await requireCurrentOrg();
+  if (!canWrite(org.role)) return { error: 'Sem permissão.' };
+  const supabase = await createClient();
+
+  const { count } = await supabase
+    .from('order_item_print_jobs')
+    .select('id', { count: 'exact', head: true })
+    .eq('print_job_id', id)
+    .eq('organization_id', org.organizationId);
+  if (count) {
+    return {
+      error: 'Esta impressão está vinculada a um pedido. Remova o vínculo no pedido antes de excluir.',
+    };
+  }
+
+  const { error } = await supabase
+    .from('print_jobs')
+    .delete()
+    .eq('id', id)
+    .eq('organization_id', org.organizationId);
+  if (error) return { error: error.message };
+
+  revalidatePath('/impressoes');
+  revalidatePath('/dashboard');
+  redirect('/impressoes');
+}
+
+/** Associa um filamento (peso consumido, rolo opcional) a uma impressão já
+ * existente — é assim que uma impressão sincronizada da Bambu Cloud (sem
+ * material nenhum) passa a ter custo calculado. */
+export async function addPrintJobMaterial(_prev: unknown, formData: FormData) {
+  const { org } = await requireCurrentOrg();
+  if (!canWrite(org.role)) return { error: 'Sem permissão.' };
+  const printJobId = String(formData.get('printJobId') ?? '');
+  const filamentId = String(formData.get('filamentId') ?? '');
+  const spoolId = String(formData.get('spoolId') ?? '') || null;
+  const weightG = Number(formData.get('weightG'));
+  if (!printJobId || !filamentId) return { error: 'Selecione o filamento.' };
+  if (!weightG || weightG <= 0) return { error: 'Informe o peso consumido (g).' };
+
+  const supabase = await createClient();
+  const { data: fil } = await supabase
+    .from('filaments')
+    .select('default_price_per_kg')
+    .eq('id', filamentId)
+    .eq('organization_id', org.organizationId)
+    .single();
+  if (!fil) return { error: 'Filamento não encontrado.' };
+
+  const pricePerKg = Number(fil.default_price_per_kg) || 0;
+  const materialCost = (weightG * pricePerKg) / 1000;
+  const { error } = await supabase.from('print_job_materials').insert({
+    organization_id: org.organizationId,
+    print_job_id: printJobId,
+    filament_id: filamentId,
+    spool_id: spoolId,
+    source: 'manual',
+    weight_g: weightG,
+    price_per_kg_snapshot: pricePerKg,
+    material_cost_snapshot: Math.round(materialCost * 10000) / 10000,
+  });
+  if (error) return { error: error.message };
+
+  await recalculatePrintJob(supabase, org.organizationId, printJobId);
+  revalidatePath(`/impressoes/${printJobId}`);
+  revalidatePath('/impressoes');
+  revalidatePath('/dashboard');
+  return { ok: 'Material associado.' };
+}
+
+/** Remove um material da impressão e recalcula o custo (novo snapshot). */
+export async function removePrintJobMaterial(materialId: string) {
+  const { org } = await requireCurrentOrg();
+  if (!canWrite(org.role)) return { error: 'Sem permissão.' };
+  const supabase = await createClient();
+
+  const { data: material } = await supabase
+    .from('print_job_materials')
+    .select('print_job_id')
+    .eq('id', materialId)
+    .eq('organization_id', org.organizationId)
+    .single();
+  if (!material) return { error: 'Material não encontrado.' };
+
+  const { error } = await supabase
+    .from('print_job_materials')
+    .delete()
+    .eq('id', materialId)
+    .eq('organization_id', org.organizationId);
+  if (error) return { error: error.message };
+
+  await recalculatePrintJob(supabase, org.organizationId, material.print_job_id);
+  revalidatePath(`/impressoes/${material.print_job_id}`);
+  revalidatePath('/impressoes');
+  revalidatePath('/dashboard');
+}

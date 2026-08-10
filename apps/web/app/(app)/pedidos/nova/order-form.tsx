@@ -47,6 +47,7 @@ export function OrderForm({
             id="customerId"
             name="customerId"
             placeholder="— Sem cliente —"
+            searchable
             options={customers.map((c) => ({ value: c.id, label: c.label }))}
           />
         </div>

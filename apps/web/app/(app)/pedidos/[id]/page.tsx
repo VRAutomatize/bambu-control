@@ -5,8 +5,9 @@ import { createClient } from '@/lib/supabase/server';
 import { PageHeader, Card, StatCard } from '@/components/ui';
 import { AuthForm } from '@/components/auth-form';
 import { Select } from '@/components/select';
+import { ConfirmActionButton } from '@/components/confirm-action-button';
 import { formatMoney, formatMargin, formatDate } from '@/lib/format';
-import { addPayment, associatePrintJob } from '../actions';
+import { addPayment, associatePrintJob, removePrintJobAssociation } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +32,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
     // impressão ainda estão disponíveis para vender.
     supabase
       .from('order_item_print_jobs')
-      .select('order_item_id, print_job_id, allocated_quantity')
+      .select('id, order_item_id, print_job_id, allocated_quantity')
       .eq('organization_id', orgId),
     supabase.from('payments').select('*').eq('order_id', id).order('created_at', { ascending: false }),
     supabase
@@ -126,6 +127,42 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
           </table>
           </div>
 
+          {assoc.length > 0 && (
+            <div className="mt-5 border-t border-black/[0.06] pt-5 dark:border-white/[0.08]">
+              <h3 className="mb-2.5 text-[13px] font-semibold text-neutral-700 dark:text-neutral-200">
+                Impressões vinculadas
+              </h3>
+              <ul className="space-y-1.5">
+                {assoc.map((a) => {
+                  const it = items.find((x) => x.id === a.order_item_id);
+                  const job = jobById.get(a.print_job_id);
+                  return (
+                    <li
+                      key={a.id}
+                      className="flex items-center justify-between gap-2 rounded-xl bg-black/[0.015] px-3 py-2 text-[12.5px] dark:bg-white/[0.02]"
+                    >
+                      <span className="text-neutral-600 dark:text-neutral-300">
+                        <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                          {job?.title ?? 'Impressão'}
+                        </span>{' '}
+                        → {it?.description ?? 'item'} ({a.allocated_quantity}x)
+                      </span>
+                      <ConfirmActionButton
+                        action={removePrintJobAssociation}
+                        id={a.id}
+                        label="Desvincular"
+                        confirmText="Desvincular?"
+                        pendingLabel="Desvinculando…"
+                        icon={false}
+                        className="shrink-0 text-[11px] font-medium text-neutral-400 hover:text-red-600 dark:hover:text-red-400"
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
           <div className="mt-5 border-t border-black/[0.06] pt-5 dark:border-white/[0.08]">
             <h3 className="mb-2.5 text-[13px] font-semibold text-neutral-700 dark:text-neutral-200">
               Associar impressão a um item
@@ -134,12 +171,14 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
               <Select
                 name="orderItemId"
                 required
+                searchable
                 placeholder="— Item —"
                 options={items.map((it) => ({ value: it.id, label: it.description }))}
               />
               <Select
                 name="printJobId"
                 required
+                searchable
                 placeholder="— Impressão —"
                 options={jobs.map((j) => ({
                   value: j.id,

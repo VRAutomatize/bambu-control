@@ -252,6 +252,7 @@ export default async function FilamentosPage() {
                 <Select
                   name="filamentId"
                   required
+                  searchable
                   placeholder="— Filamento —"
                   options={activeFilaments.map((f) => ({
                     value: f.id,

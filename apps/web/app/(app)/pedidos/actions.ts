@@ -167,6 +167,33 @@ export async function associatePrintJob(orderId: string, _prev: unknown, formDat
   return { ok: 'Impressão associada.' };
 }
 
+/** Desfaz o vínculo entre um item de pedido e uma impressão (não mexe nos
+ * registros em si — só na associação). Libera a impressão pra ser
+ * vinculada em outro pedido, e é o que destrava excluir a impressão
+ * quando ela está presa a um pedido. */
+export async function removePrintJobAssociation(id: string) {
+  const { org } = await requireCurrentOrg();
+  if (!canWrite(org.role)) return { error: 'Sem permissão.' };
+  const supabase = await createClient();
+
+  const { data: assoc } = await supabase
+    .from('order_item_print_jobs')
+    .select('order_item_id, order_items(order_id)')
+    .eq('id', id)
+    .eq('organization_id', org.organizationId)
+    .single();
+
+  const { error } = await supabase
+    .from('order_item_print_jobs')
+    .delete()
+    .eq('id', id)
+    .eq('organization_id', org.organizationId);
+  if (error) return { error: error.message };
+
+  const orderItem = Array.isArray(assoc?.order_items) ? assoc.order_items[0] : assoc?.order_items;
+  if (orderItem?.order_id) revalidatePath(`/pedidos/${orderItem.order_id}`);
+}
+
 /** Unidades de uma impressão ainda não alocadas a nenhum item de pedido. */
 async function getAvailableQuantity(
   supabase: Awaited<ReturnType<typeof createClient>>,
